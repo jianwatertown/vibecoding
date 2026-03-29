@@ -514,8 +514,14 @@ td { font-variant-numeric: tabular-nums; }
         </div>
       </div>
       <div class="field">
-        <label>Loan Draw Period <span class="tip" data-tip="Months the loan is outstanding. Default: 24 months (2 years)">?</span></label>
-        <div class="input-wrap"><input type="number" id="s3-loan-months" value="24" step="1"><span class="suffix">mo</span></div>
+        <label>Construction Timeline <span class="tip" data-tip="Project duration in months. Affects mortgage carry, interest, and IRR.">?</span></label>
+        <div class="input-wrap">
+          <select id="s3-loan-months" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+            <option value="12">12 months (1 yr)</option>
+            <option value="18">18 months (1.5 yr)</option>
+            <option value="24" selected>24 months (2 yr)</option>
+          </select>
+        </div>
       </div>
       <div class="sub-total"><span class="st-label">Subtotal Financing (closing + interest)</span><span class="st-value" id="st-financing">$0</span></div>
 
@@ -619,6 +625,15 @@ td { font-variant-numeric: tabular-nums; }
   <div class="card" style="margin-top:20px">
     <h3>Wealth Over Time — When Does Each Option Win?</h3>
     <p style="font-size:12px;color:var(--muted);margin:-4px 0 12px">Shows projected total wealth for each option over time. Sell Now cash compounds at the risk-free rate. Rental builds equity through appreciation and cash flow. JV pays out at construction completion.</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <label style="font-size:12px;font-weight:600;color:var(--text)">Construction Timeline:</label>
+      <div id="timeline-toggle" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <button class="tl-btn" data-months="12" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#f3f4f6;color:var(--text)">12 mo</button>
+        <button class="tl-btn" data-months="18" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#f3f4f6;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border)">18 mo</button>
+        <button class="tl-btn active" data-months="24" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:var(--primary);color:white">24 mo</button>
+      </div>
+      <div id="timeline-impact" style="font-size:12px;color:var(--muted)"></div>
+    </div>
     <div id="timeline-chart" style="overflow-x:auto"></div>
   </div>
   <div class="decision-box" id="decision-box">
@@ -1607,6 +1622,49 @@ function calcComparison() {
 
   drawTimelineChart(o1, o2, o3);
 
+  // Timeline impact: compute JV at 12, 18, 24 months for quick comparison
+  const currentMonths = val('s3-loan-months');
+  const timelineOptions = [12, 18, 24];
+  const origVal = $('s3-loan-months').value;
+  const tlResults = timelineOptions.map(mo => {
+    $('s3-loan-months').value = mo;
+    const r = calcJVProject(null, null, null);
+    return { months: mo, irr: r.irr || 0, netCash: r.myNetCashAtSale || 0, mortgageCost: r.totalMortgagePayments || 0, interest: r.interestCarry || 0 };
+  });
+  $('s3-loan-months').value = origVal;
+
+  const tlEl = $('timeline-impact');
+  if (tlEl) {
+    tlEl.innerHTML = `<table style="font-size:11px;border-collapse:collapse;margin-top:4px">
+      <tr style="border-bottom:1px solid var(--border)">
+        <th style="padding:3px 8px;text-align:left"></th>
+        ${tlResults.map(r => {
+          const isCurrent = r.months === currentMonths;
+          return `<th style="padding:3px 8px;text-align:center;${isCurrent ? 'background:#ede9fe;border-radius:4px' : ''}">${r.months} mo</th>`;
+        }).join('')}
+      </tr>
+      <tr>
+        <td style="padding:2px 8px;color:var(--muted)">My Net Cash</td>
+        ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;font-weight:600">${fmt(r.netCash)}</td>`).join('')}
+      </tr>
+      <tr>
+        <td style="padding:2px 8px;color:var(--muted)">IRR</td>
+        ${tlResults.map(r => {
+          const color = r.irr >= 0.11 ? 'var(--green)' : r.irr > 0 ? '#d97706' : 'var(--red)';
+          return `<td style="padding:2px 8px;text-align:center;font-weight:700;color:${color}">${fmtPct(r.irr)}</td>`;
+        }).join('')}
+      </tr>
+      <tr>
+        <td style="padding:2px 8px;color:var(--muted)">Mortgage Carry</td>
+        ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;color:var(--red)">${fmt(r.mortgageCost)}</td>`).join('')}
+      </tr>
+      <tr>
+        <td style="padding:2px 8px;color:var(--muted)">Loan Interest</td>
+        ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;color:var(--red)">${fmt(r.interest)}</td>`).join('')}
+      </tr>
+    </table>`;
+  }
+
   const o3Incremental = opt3Cash - opt1Cash;
   const jvMonth = o3.totalMonths || 24;
   const jvYear = jvMonth / 12;
@@ -2029,7 +2087,7 @@ function presetScenario(type) {
       's3-gc-fee': 140000, 's3-sitework': 75000, 's3-additional': 30000, 's3-utility-conn': 18000,
       's3-insurance-bond': 12000, 's3-utility-tax': 25000, 's3-llc-overhead': 4000,
       's3-contingency': 5, 's3-wsst-rate': 10.2, 's3-rental-income': 20000,
-      's3-loan-amount': 1500000, 's3-loan-rate': 9.5, 's3-loan-months': 28,
+      's3-loan-amount': 1500000, 's3-loan-rate': 9.5, 's3-loan-months': 24,
       's3-sale-psf': 650, 's3-sell-close-pct': 7.5,
       's3-sale-low-psf': 585, 's3-sale-high-psf': 715,
       's3-my-pct': 45, 's3-dev-pct': 55, 's3-pref-return': 10,
@@ -2073,7 +2131,7 @@ function presetScenario(type) {
       's3-gc-fee': 115000, 's3-sitework': 60000, 's3-additional': 22000, 's3-utility-conn': 14000,
       's3-insurance-bond': 9000, 's3-utility-tax': 20000, 's3-llc-overhead': 3500,
       's3-contingency': 2, 's3-wsst-rate': 10.2, 's3-rental-income': 35000,
-      's3-loan-amount': 1500000, 's3-loan-rate': 6.5, 's3-loan-months': 20,
+      's3-loan-amount': 1500000, 's3-loan-rate': 6.5, 's3-loan-months': 18,
       's3-sale-psf': 795, 's3-sell-close-pct': 6.5,
       's3-sale-low-psf': 723, 's3-sale-high-psf': 875,
       's3-my-pct': 55, 's3-dev-pct': 45, 's3-pref-return': 6,
@@ -2085,7 +2143,18 @@ function presetScenario(type) {
   const p = presets[type];
   if (!p) return;
   Object.entries(p).forEach(([id, v]) => { const el = $(id); if (el) el.value = v; });
+  syncTimelineBtns();
   recalcAll();
+}
+
+function syncTimelineBtns() {
+  const v = parseInt($('s3-loan-months').value);
+  document.querySelectorAll('.tl-btn').forEach(btn => {
+    const isActive = parseInt(btn.dataset.months) === v;
+    btn.style.background = isActive ? 'var(--primary)' : '#f3f4f6';
+    btn.style.color = isActive ? 'white' : 'var(--text)';
+    btn.classList.toggle('active', isActive);
+  });
 }
 
 function resetAll() {
@@ -2253,6 +2322,26 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('input', recalcAll);
     el.addEventListener('change', recalcAll);
   });
+
+  // Sync timeline toggle buttons ↔ JV dropdown
+  document.querySelectorAll('.tl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const months = parseInt(btn.dataset.months);
+      const sel = $('s3-loan-months');
+      let opt = sel.querySelector(`option[value="${months}"]`);
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = months;
+        opt.textContent = `${months} months`;
+        sel.appendChild(opt);
+      }
+      sel.value = months;
+      syncTimelineBtns();
+      recalcAll();
+    });
+  });
+
+  $('s3-loan-months').addEventListener('change', syncTimelineBtns);
 
   document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) closeModals(); });
