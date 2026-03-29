@@ -1498,7 +1498,6 @@ function calcOption3() {
         <div class="result-item"><div class="r-label">Incremental vs Sell Now</div><div class="r-value ${colorClass(base.myNetCashAtSale - R.opt1.netCash)}">${fmt(base.myNetCashAtSale - R.opt1.netCash)}</div></div>
         <div class="result-item"><div class="r-label">Developer Payout</div><div class="r-value">${fmt(base.devPayout)}</div></div>
         <div class="result-item"><div class="r-label">Timeline</div><div class="r-value">${base.totalMonths} months (${jvTotalYears.toFixed(1)} yrs)</div></div>
-        <div class="result-item" style="background:#fffbeb;border:1px solid #fde68a"><div class="r-label">Jeff's Project Return <span class="tip" data-tip="Gross Profit ÷ Total Project Cost, annualized. This is how Jeff's Excel reports return — measured at the project level. Your personal IRR is higher because of leverage: you put in $602K equity but benefit from a $2.9M project funded by Jeff's cash and a $1.5M loan.">?</span></div><div class="r-value">${fmtPct(base.jeffProjectReturn)}</div></div>
       </div>
     </div>
 
@@ -2269,7 +2268,6 @@ function updateFactsAndAssumptions() {
     ...jvFlowDetails,
     '',
     `  → Annual IRR: ${fmtPct(o3.irr)}`,
-    `  → Jeff's Project Return: ${fmtPct(o3.jeffProjectReturn)}`,
     '',
     'WHY SHORTER JV TIMELINES HAVE HIGHER IRR:',
     `  Sale price is FIXED at $${val('s3-sale-psf')}/sqft regardless of timeline`,
