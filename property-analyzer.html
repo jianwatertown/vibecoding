@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Financial Analyzer — 4333 123rd Ave SE, Bellevue</title>
+<style>
+:root {
+  --bg: #f4f5f7; --card: #fff; --border: #dde1e6; --text: #1a1a2e;
+  --muted: #6b7280; --accent: #2563eb; --accent-light: #dbeafe;
+  --green: #16a34a; --green-bg: #dcfce7; --yellow: #ca8a04; --yellow-bg: #fef9c3;
+  --red: #dc2626; --red-bg: #fee2e2; --radius: 8px; --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; font-size: 14px; }
+a { color: var(--accent); }
+
+.header { background: #1a1a2e; color: #fff; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.header h1 { font-size: 18px; font-weight: 600; }
+.header .addr { color: #94a3b8; font-size: 13px; }
+.header-controls { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mode-toggle { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-size: 12px; }
+.mode-toggle:hover { background: rgba(255,255,255,.25); }
+
+.nav { background: var(--card); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0; padding: 0 16px; position: sticky; top: 0; z-index: 100; }
+.nav button { background: none; border: none; padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.nav button:hover { color: var(--text); }
+.nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.scenario-bar { background: var(--card); border-bottom: 1px solid var(--border); padding: 8px 24px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; }
+.scenario-bar label { font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.btn { padding: 5px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 12px; color: var(--text); }
+.btn:hover { background: var(--bg); }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-accent:hover { background: #1d4ed8; }
+.btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-red { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-red:hover { background: #b91c1c; }
+
+.main { max-width: 1440px; margin: 0 auto; padding: 20px; }
+.section { display: none; }
+.section.active { display: block; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.card h3 { font-size: 15px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.card h4 { font-size: 13px; margin: 14px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+
+.field { margin-bottom: 10px; }
+.field label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 3px; color: var(--text); }
+.field .input-wrap { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 5px; overflow: hidden; background: #fff; }
+.field .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+.field .prefix, .field .suffix { padding: 0 8px; font-size: 12px; color: var(--muted); background: #f9fafb; border-right: 1px solid var(--border); white-space: nowrap; min-width: 24px; text-align: center; line-height: 32px; }
+.field .suffix { border-right: none; border-left: 1px solid var(--border); }
+.field input, .field select { border: none; outline: none; padding: 6px 10px; font-size: 13px; width: 100%; background: transparent; }
+.field input[type=number] { -moz-appearance: textfield; }
+.field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.field select { cursor: pointer; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.advanced-field { display: none; }
+body.advanced .advanced-field { display: block; }
+body.advanced .field-row .advanced-field { display: block; }
+body.advanced .field-row-3 .advanced-field { display: block; }
+
+.tip { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 10px; font-weight: 700; cursor: help; margin-left: 4px; position: relative; vertical-align: middle; }
+.tip:hover::after { content: attr(data-tip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 6px 10px; border-radius: 5px; font-size: 11px; font-weight: 400; white-space: pre-line; width: max-content; max-width: 280px; z-index: 200; line-height: 1.4; }
+
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.result-item { padding: 10px 12px; background: var(--bg); border-radius: 6px; }
+.result-item .r-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+.result-item .r-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+.result-item.full { grid-column: 1 / -1; }
+.result-item.highlight { background: var(--accent-light); }
+.result-item .r-value.positive { color: var(--green); }
+.result-item .r-value.negative { color: var(--red); }
+.result-item .r-value.caution { color: var(--yellow); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); background: #f9fafb; font-weight: 600; }
+table.yearly-tbl td:not(:first-child), table.yearly-tbl th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+table.yearly-tbl td:first-child, table.yearly-tbl th:first-child { text-align: center; width: 44px; }
+table.yearly-tbl { table-layout: fixed; }
+table.yearly-tbl th { white-space: nowrap; font-size: 10px; }
+td { font-variant-numeric: tabular-nums; }
+.compare-table td:first-child { font-weight: 500; }
+.compare-table .best { background: var(--green-bg); font-weight: 700; }
+.compare-table .worst { background: var(--red-bg); }
+
+.sens-table { font-size: 12px; text-align: center; }
+.sens-table th, .sens-table td { padding: 6px 8px; text-align: center; min-width: 80px; }
+.sens-table .cell-green { background: var(--green-bg); }
+.sens-table .cell-yellow { background: var(--yellow-bg); }
+.sens-table .cell-red { background: var(--red-bg); }
+.sens-table .cell-base { font-weight: 700; outline: 2px solid var(--accent); }
+
+.risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.risk-card { text-align: center; }
+.risk-card h4 { margin-bottom: 12px; }
+.risk-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; }
+.risk-row select { width: 60px; }
+.risk-score { font-size: 32px; font-weight: 800; margin: 10px 0 4px; }
+.risk-label { font-size: 12px; color: var(--muted); }
+
+.rec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.rec-card { padding: 14px; border-radius: var(--radius); border-left: 4px solid; }
+.rec-card.green { border-color: var(--green); background: var(--green-bg); }
+.rec-card.yellow { border-color: var(--yellow); background: var(--yellow-bg); }
+.rec-card.red { border-color: var(--red); background: var(--red-bg); }
+.rec-card .rec-title { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .4px; }
+.rec-card .rec-value { font-size: 16px; font-weight: 700; margin-top: 2px; }
+.rec-card .rec-detail { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.decision-box { background: #f0f4ff; border: 1px solid #c7d7fe; border-radius: var(--radius); padding: 16px 20px; margin-top: 20px; }
+.decision-box h4 { color: var(--accent); margin-bottom: 10px; }
+.decision-box p { font-size: 13px; margin-bottom: 6px; line-height: 1.6; }
+.decision-box strong { color: var(--text); }
+
+.chart-container { margin-top: 16px; }
+.chart-container svg { width: 100%; height: auto; }
+
+.disclaimer { text-align: center; padding: 20px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 24px; }
+
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 500; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--card); border-radius: var(--radius); padding: 24px; width: 400px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+.modal h3 { margin-bottom: 16px; }
+.modal .scenario-list { list-style: none; }
+.modal .scenario-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.modal input[type=text] { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 5px; margin-bottom: 12px; font-size: 13px; }
+
+.readonly-calc { background: #f3f4f6 !important; }
+.sub-total { background: #eef2ff; border-radius: 4px; padding: 6px 10px; margin: 6px 0; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; }
+.sub-total .st-label { color: var(--muted); }
+.sub-total .st-value { color: var(--accent); }
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .risk-grid { grid-template-columns: 1fr; }
+  .result-grid { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .header-controls { margin-left: 0; }
+  .field-row, .field-row-3 { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .nav, .scenario-bar, .header-controls, .mode-toggle, .btn, .no-print { display: none !important; }
+  .section { display: block !important; page-break-inside: avoid; margin-bottom: 24px; }
+  .section:not(#sec-compare):not(#sec-risk) { display: none !important; }
+  #sec-compare, #sec-risk { display: block !important; }
+  body { background: #fff; font-size: 12px; }
+  .card { box-shadow: none; border: 1px solid #ccc; }
+  .header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+  .header .addr { color: #666; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<div class="header">
+  <div>
+    <h1>Property Financial Analyzer</h1>
+    <div class="addr">4333 123rd Ave SE, Bellevue, WA 98006 &mdash; Investment / Rental / Redevelopment</div>
+  </div>
+  <div class="header-controls">
+    <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">Advanced Mode</button>
+    <button class="btn" onclick="window.print()">Print</button>
+    <button class="btn btn-accent" onclick="exportCSV()">Export CSV</button>
+  </div>
+</div>
+
+<!-- ==================== NAV ==================== -->
+<div class="nav" id="nav">
+  <button class="active" onclick="switchTab('opt1')">1. Sell Now</button>
+  <button onclick="switchTab('opt2')">2. Rental</button>
+  <button onclick="switchTab('opt3')">3. JV Redevelopment</button>
+  <button onclick="switchTab('compare')">Compare</button>
+  <button onclick="switchTab('risk')">Risk</button>
+  <button onclick="switchTab('sensitivity')">Sensitivity</button>
+  <button onclick="switchTab('formulas')">Formulas</button>
+</div>
+
+<!-- ==================== SCENARIO BAR ==================== -->
+<div class="scenario-bar no-print">
+  <label>Scenarios:</label>
+  <button class="btn" onclick="presetScenario('conservative')">Conservative</button>
+  <button class="btn" onclick="presetScenario('base')">Base</button>
+  <button class="btn" onclick="presetScenario('aggressive')">Aggressive</button>
+  <span style="color:var(--border)">|</span>
+  <button class="btn" onclick="showSaveModal()">Save</button>
+  <button class="btn" onclick="showLoadModal()">Load</button>
+  <button class="btn" onclick="duplicateScenario()">Duplicate</button>
+  <button class="btn btn-red" onclick="resetAll()">Reset</button>
+</div>
+
+<div class="main">
+
+<!-- ===================== OPTION 1: SELL NOW ===================== -->
+<div class="section active" id="sec-opt1">
+  <div class="two-col">
+    <div class="card">
+      <h3>Option 1: Sell Now — Inputs</h3>
+      <div class="field">
+        <label>Price Estimate Source <span class="tip" data-tip="Select a reference estimate or enter custom">?</span></label>
+        <div class="input-wrap">
+          <select id="s1-price-source" onchange="applyPriceSource()">
+            <option value="comps">Market Comps Analysis ($1.275M)</option>
+            <option value="redfin">Redfin Estimate ($1.535M)</option>
+            <option value="zillow">Zillow Estimate ($1.509M)</option>
+            <option value="county">King County Assessment ($1.358M)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Expected Sale Price <span class="tip" data-tip="Comps analysis: $1.25-1.30M range (lot value). List $1.25M, possible multiple offers to $1.32-1.35M">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s1-sale-price" value="1275000" step="1000"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Agent Commission <span class="tip" data-tip="Typically 5-6% split between buyer/seller agents">?</span></label>
+          <div class="input-wrap"><input type="number" id="s1-commission" value="5" step="0.1"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label>Seller Closing Costs <span class="tip" data-tip="Title, escrow, recording fees — typically 1-2%">?</span></label>
+          <div class="input-wrap"><input type="number" id="s1-closing-pct" value="1.5" step="0.1"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Mortgage Payoff Balance</label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s1-mortgage" value="548005" step="1000"></div>
+      </div>
+      <div class="field">
+        <label>Repair / Prep / Staging Cost <span class="tip" data-tip="Selling as-is for lot value — minimal prep needed">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s1-repair" value="0" step="500"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Excise / Transfer Tax <span class="tip" data-tip="WA state excise tax ~1.1-3% depending on price. Bellevue typical ~1.78%">?</span></label>
+          <div class="input-wrap"><input type="number" id="s1-excise" value="1.78" step="0.01"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label>Capital Gains Tax Estimate</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s1-captax" value="50000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Other Selling Costs</label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s1-other" value="5000" step="500"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Option 1: Sell Now — Results</h3>
+      <div class="result-grid" id="res-opt1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== OPTION 2: RENTAL ===================== -->
+<div class="section" id="sec-opt2">
+  <div class="two-col">
+    <div class="card">
+      <h3>Option 2: Keep as Rental — Inputs</h3>
+      <h4>Property & Rent</h4>
+      <div class="field">
+        <label>Current Market Value <span class="tip" data-tip="Synced from Option 1 (Sell Now) sale price for consistency. Change it in the Sell Now tab.">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-market-value" value="1275000" readonly style="background:#f3f4f6;color:#6b7280"></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">← Synced from Option 1 sale price</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Monthly Rent <span class="tip" data-tip="Current: $4,000/mo">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-rent" value="4000" step="50"></div>
+        </div>
+        <div class="field">
+          <label>Vacancy Rate</label>
+          <div class="input-wrap"><input type="number" id="s2-vacancy" value="5" step="1"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Property Management Fee <span class="tip" data-tip="Typical 7-10% of collected rent">?</span></label>
+        <div class="input-wrap"><input type="number" id="s2-pm-fee" value="7" step="0.5"><span class="suffix">%</span></div>
+      </div>
+      <h4>Annual Expenses</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Annual Maintenance <span class="tip" data-tip="2024: $3,138 | 2025: $6,794 | Avg ~$4,500">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-maintenance" value="4500" step="500"></div>
+        </div>
+        <div class="field">
+          <label>Annual Property Tax <span class="tip" data-tip="2025 King County: $9,191 on $1,358,000 assessment">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-prop-tax" value="9191" step="500"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Annual Insurance <span class="tip" data-tip="Current: $1,662/year">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-insurance" value="1662" step="100"></div>
+        </div>
+        <div class="field">
+          <label>HOA (Annual)</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-hoa" value="0" step="100"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Utilities Paid by Owner</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-utilities" value="0" step="100"></div>
+        </div>
+        <div class="field">
+          <label>Annual CapEx Reserve</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-capex" value="3000" step="500"></div>
+        </div>
+      </div>
+      <h4>Mortgage</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Monthly Mortgage Payment <span class="tip" data-tip="Current: $4,057/mo">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-mortgage-pmt" value="4057" step="50"></div>
+        </div>
+        <div class="field">
+          <label>Interest Rate <span class="tip" data-tip="Current: 3.75%">?</span></label>
+          <div class="input-wrap"><input type="number" id="s2-int-rate" value="3.75" step="0.125"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Remaining Mortgage Balance <span class="tip" data-tip="Current principal: $548,005">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-mortgage-bal" value="548005" step="1000"></div>
+      </div>
+      <h4>Growth & Hold Period</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Annual Appreciation <span class="tip" data-tip="Expected annual property value growth rate">?</span></label>
+          <div class="input-wrap"><input type="number" id="s2-appreciation" value="2" step="0.5"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label>Annual Rent Growth</label>
+          <div class="input-wrap"><input type="number" id="s2-rent-growth" value="3" step="0.5"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Annual Expense Growth <span class="tip" data-tip="Tax, insurance, maintenance grow each year. 0% = flat (optimistic). 2-3% = realistic.">?</span></label>
+          <div class="input-wrap"><input type="number" id="s2-expense-growth" value="2" step="0.5"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label>Risk-Free Rate <span class="tip" data-tip="Opportunity cost of capital. US 10yr bond ≈ 4%. Used to show the true cost of negative cash flows.">?</span></label>
+          <div class="input-wrap"><input type="number" id="s2-risk-free" value="4" step="0.25"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Hold Period (Years)</label>
+          <div class="input-wrap"><input type="number" id="s2-hold-years" value="5" step="1"><span class="suffix">yrs</span></div>
+        </div>
+        <div class="field">
+          <label>Exit Selling Cost <span class="tip" data-tip="Commission + closing + excise at sale — typically 7-9%">?</span></label>
+          <div class="input-wrap"><input type="number" id="s2-exit-cost" value="8" step="0.5"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <h4>Actual Performance (Reference)</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>2025 Actual Cash In</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-actual-cashin-2025" value="42000" step="100" disabled style="background:#f3f4f6"></div>
+        </div>
+        <div class="field">
+          <label>2025 Actual Take Home</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-actual-takehome-2025" value="35205" step="100" disabled style="background:#f3f4f6"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>2026 Q1 Actual Cash In</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-actual-cashin-2026q1" value="10800" step="100" disabled style="background:#f3f4f6"></div>
+        </div>
+        <div class="field">
+          <label>2026 Q1 Actual Take Home</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-actual-takehome-2026q1" value="9323" step="100" disabled style="background:#f3f4f6"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Option 2: Keep as Rental — Results</h3>
+      <div class="result-grid" id="res-opt2"></div>
+      <h4 style="margin-top:16px">Year-by-Year Projection</h4>
+      <div style="overflow-x:auto"><table id="tbl-opt2-yearly"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== OPTION 3: JV REDEVELOPMENT ===================== -->
+<div class="section" id="sec-opt3">
+  <div class="two-col">
+    <div class="card" style="max-height: 90vh; overflow-y: auto;">
+      <h3>Option 3: JV Redevelopment — Inputs</h3>
+
+      <h4>A. Property / Land Contribution</h4>
+      <div class="field">
+        <label>Land Price (Developer's Valuation) <span class="tip" data-tip="Price at which land enters the deal. Developer budget: $1,150,000">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-as-is-value" value="1150000" step="5000"></div>
+      </div>
+      <div class="field">
+        <label>Mortgage Payoff Balance</label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-mortgage" value="548005" step="1000"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Closing Costs Into Deal</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-closing" value="10000" step="500"></div>
+        </div>
+        <div class="field advanced-field">
+          <label>My Basis / Purchase Price</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-basis" value="800000" step="5000"></div>
+        </div>
+      </div>
+
+      <h4>B. Design & Soft Costs</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Architect</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-architect" value="15000" step="1000"></div>
+        </div>
+        <div class="field">
+          <label>Structural Engineer</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-structural" value="10000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Civil Engineer</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-civil" value="8000" step="1000"></div>
+        </div>
+        <div class="field">
+          <label>Survey <span class="tip" data-tip="Including construction staking">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-survey" value="10000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field-row advanced-field">
+        <div class="field advanced-field">
+          <label>Arborist</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-arborist" value="1000" step="500"></div>
+        </div>
+        <div class="field advanced-field">
+          <label>Geo / Soil Analysis</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-geo-soil" value="8000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Build Permitting <span class="tip" data-tip="Government permit fees">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-build-permit" value="30000" step="1000"></div>
+      </div>
+      <div class="sub-total"><span class="st-label">Subtotal Soft Costs</span><span class="st-value" id="st-soft">$0</span></div>
+
+      <h4>C. Construction (Hard Costs)</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Building Size <span class="tip" data-tip="Indoor / finished area in sqft">?</span></label>
+          <div class="input-wrap"><input type="number" id="s3-building-sqft" value="4700" step="100"><span class="suffix">sqft</span></div>
+        </div>
+        <div class="field">
+          <label>Construction $/sqft <span class="tip" data-tip="Pre-tax construction cost per sqft. Budget: $225/sqft">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-construction-psf" value="225" step="5"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Construction Cost (auto-calc)</label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-construction" value="1057500" step="1000" class="readonly-calc" readonly></div>
+      </div>
+      <div class="field">
+        <label>GC Managing Fee <span class="tip" data-tip="General Contractor management fee">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-gc-fee" value="125125" step="1000"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Site Work (incl. Demo) <span class="tip" data-tip="Demolition + site preparation">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-sitework" value="65000" step="1000"></div>
+        </div>
+        <div class="field">
+          <label>Additional (Sewer ext.) <span class="tip" data-tip="Sewer extension and other additional items">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-additional" value="25000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Utility Connection <span class="tip" data-tip="Gas, Power, Water, Sewer connections">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-utility-conn" value="15000" step="1000"></div>
+      </div>
+      <div class="sub-total"><span class="st-label">Subtotal Hard Costs</span><span class="st-value" id="st-hard">$0</span></div>
+
+      <h4>D. Project Carry & Overhead</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Insurance & Bond</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-insurance-bond" value="10000" step="1000"></div>
+        </div>
+        <div class="field">
+          <label>Utility & Property Tax <span class="tip" data-tip="During construction period">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-utility-tax" value="22000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>LLC Overhead <span class="tip" data-tip="Tax filing, entity maintenance">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-llc-overhead" value="3500" step="500"></div>
+        </div>
+        <div class="field">
+          <label>Contingency <span class="tip" data-tip="% of (soft + hard costs + carry) for overruns. Budget: 2%">?</span></label>
+          <div class="input-wrap"><input type="number" id="s3-contingency" value="2" step="0.5"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>WSST Tax Rate <span class="tip" data-tip="WA State Sales Tax on construction. Current: 10.2%">?</span></label>
+          <div class="input-wrap"><input type="number" id="s3-wsst-rate" value="10.2" step="0.1"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label>Rental Income Offset <span class="tip" data-tip="Rental income during project period, reduces cost. Budget: $30,000">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-rental-income" value="30000" step="1000"></div>
+        </div>
+      </div>
+      <div class="sub-total"><span class="st-label">Subtotal Carry + Tax (incl. contingency/WSST)</span><span class="st-value" id="st-carry">$0</span></div>
+
+      <h4>E. Financing</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Construction Loan Amount <span class="tip" data-tip="Budget: $1,500,000">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-loan-amount" value="1500000" step="10000"></div>
+        </div>
+        <div class="field">
+          <label>Loan Interest Rate</label>
+          <div class="input-wrap"><input type="number" id="s3-loan-rate" value="7.5" step="0.25"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Loan Draw Period <span class="tip" data-tip="Months the loan is outstanding. Budget: 14 months">?</span></label>
+        <div class="input-wrap"><input type="number" id="s3-loan-months" value="14" step="1"><span class="suffix">mo</span></div>
+      </div>
+      <div class="sub-total"><span class="st-label">Subtotal Financing (closing + interest)</span><span class="st-value" id="st-financing">$0</span></div>
+
+      <h4>F. Sale Outcome</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Sale Price $/sqft <span class="tip" data-tip="Jeff's base: $723/sqft ($3.4M/4700sf). Comps: 4401→$704/sf, 4257→$822/sf">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-sale-psf" value="723" step="5"></div>
+        </div>
+        <div class="field">
+          <label>Base Sale Price (auto-calc)</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-sale-base" value="3398100" step="10000" class="readonly-calc" readonly></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Selling Cost <span class="tip" data-tip="4% commission + 2.75% title/escrow/tax + 0.25% staging = 7%">?</span></label>
+        <div class="input-wrap"><input type="number" id="s3-sell-close-pct" value="7" step="0.5"><span class="suffix">%</span></div>
+      </div>
+      <div class="field-row advanced-field">
+        <div class="field advanced-field">
+          <label>Conservative $/sqft <span class="tip" data-tip="~$638/sqft ($3.0M / 4700sf)">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-sale-low-psf" value="638" step="5"></div>
+        </div>
+        <div class="field advanced-field">
+          <label>Optimistic $/sqft <span class="tip" data-tip="Jeff's high: $795/sqft ($3.74M / 4700sf)">?</span></label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-sale-high-psf" value="795" step="5"></div>
+        </div>
+      </div>
+
+      <h4>G. JV Economics</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>My Ownership %</label>
+          <div class="input-wrap"><input type="number" id="s3-my-pct" value="50" step="1"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label>Developer Ownership %</label>
+          <div class="input-wrap"><input type="number" id="s3-dev-pct" value="50" step="1"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Preferred Return % (Annual) <span class="tip" data-tip="Hurdle rate on invested capital before profit split. 0 = none.">?</span></label>
+        <div class="input-wrap"><input type="number" id="s3-pref-return" value="8" step="0.5"><span class="suffix">%</span></div>
+      </div>
+      <div class="field">
+        <label>Land Contribution Structure <span class="tip" data-tip="How your land value is treated in the JV deal">?</span></label>
+        <div class="input-wrap">
+          <select id="s3-structure">
+            <option value="equity">Equity Contribution</option>
+            <option value="note">Seller Note</option>
+            <option value="guaranteed">Guaranteed Base + Upside</option>
+          </select>
+        </div>
+      </div>
+      <div class="field advanced-field">
+        <label>Minimum Guaranteed Payout to Me <span class="tip" data-tip="Only used with 'Guaranteed Base + Upside' structure">?</span></label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-min-payout" value="750000" step="10000"></div>
+      </div>
+
+      <h4>H. Taxes / Fees</h4>
+      <div class="field-row">
+        <div class="field">
+          <label>Estimated Tax Rate on Profit</label>
+          <div class="input-wrap"><input type="number" id="s3-tax-rate" value="20" step="1"><span class="suffix">%</span></div>
+        </div>
+        <div class="field advanced-field">
+          <label>Legal / Entity Setup</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-legal" value="10000" step="1000"></div>
+        </div>
+      </div>
+      <div class="field-row advanced-field">
+        <div class="field advanced-field">
+          <label>Accounting Cost</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-accounting" value="5000" step="500"></div>
+        </div>
+        <div class="field advanced-field">
+          <label>Other Transaction Costs</label>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-other-txn" value="5000" step="500"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Option 3: JV Redevelopment — Results</h3>
+      <div class="result-grid" id="res-opt3"></div>
+      <h4 style="margin-top:16px">Developer Budget Summary</h4>
+      <div style="overflow-x:auto"><table id="tbl-budget"><thead></thead><tbody></tbody></table></div>
+      <h4 style="margin-top:16px">Waterfall Distribution</h4>
+      <div style="overflow-x:auto"><table id="tbl-waterfall"><thead></thead><tbody></tbody></table></div>
+      <h4 style="margin-top:16px">Scenario Comparison (Low / Base / High)</h4>
+      <div style="overflow-x:auto"><table id="tbl-scenarios"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMPARE ===================== -->
+<div class="section" id="sec-compare">
+  <div class="card">
+    <h3>Side-by-Side Comparison</h3>
+    <div style="overflow-x:auto"><table class="compare-table" id="tbl-compare"><thead></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>Recommendations</h3>
+    <div class="rec-grid" id="rec-grid"></div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>Visual Comparison</h3>
+    <div class="chart-container" id="chart-container"></div>
+  </div>
+  <div class="decision-box" id="decision-box">
+    <h4>Decision Summary</h4>
+    <div id="decision-content"></div>
+  </div>
+</div>
+
+<!-- ===================== RISK ===================== -->
+<div class="section" id="sec-risk">
+  <div class="card">
+    <h3>Risk Assessment (Rate 1–5: 1 = Low, 5 = High)</h3>
+    <div class="risk-grid" id="risk-grid"></div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>Risk-Adjusted Attractiveness</h3>
+    <div class="result-grid" id="risk-adjusted-grid"></div>
+  </div>
+</div>
+
+<!-- ===================== SENSITIVITY ===================== -->
+<div class="section" id="sec-sensitivity">
+  <div class="card">
+    <h3>Sensitivity: My JV Payout by Sale $/sqft × Construction $/sqft</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Green = beats selling now. Yellow = within 10% of selling now. Red = worse than selling now.</p>
+    <div style="overflow-x:auto"><table class="sens-table" id="tbl-sens-cost"><thead></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>Sensitivity: My JV Payout by Sale $/sqft × Loan Rate</h3>
+    <div style="overflow-x:auto"><table class="sens-table" id="tbl-sens-time"><thead></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>Break-Even Analysis (vs. Selling Now)</h3>
+    <div class="result-grid" id="res-breakeven"></div>
+  </div>
+</div>
+
+<!-- ===================== FORMULAS ===================== -->
+<div class="section" id="sec-formulas">
+
+  <div class="card">
+    <h3>Option 1: Sell Now</h3>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Agent Commission</td><td>Sale Price × Commission %</td></tr>
+      <tr><td>Closing Costs</td><td>Sale Price × Closing %</td></tr>
+      <tr><td>Excise / Transfer Tax</td><td>Sale Price × Excise %</td></tr>
+      <tr><td>Total Selling Costs</td><td>Commission + Closing + Repair + Excise + Capital Gains Tax + Other</td></tr>
+      <tr><td><strong>Net Cash to Owner</strong></td><td><strong>Sale Price − Total Selling Costs − Mortgage Payoff</strong></td></tr>
+    </table>
+    <div class="decision-box" style="margin-top:12px">
+      <p><strong>Price Estimate Sources:</strong> The dropdown provides multiple valuation references. "Market Comps" ($1.275M) is based on comparable lot sales on the same street — this reflects land value to a developer/end-user buyer. Redfin/Zillow estimates ($1.5M+) value the existing house+land as-is, which is higher but may not reflect actual buyer pool for this property.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Option 2: Keep as Rental</h3>
+
+    <h4>Annual Cash Flow (per year)</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Gross Annual Rent</td><td>Monthly Rent × 12</td></tr>
+      <tr><td>Effective Rent</td><td>Gross Rent × (1 − Vacancy Rate)</td></tr>
+      <tr><td>Property Management</td><td>Effective Rent × PM Fee %</td></tr>
+      <tr><td>Total Expenses</td><td>PM + Maintenance + Property Tax + Insurance + HOA + Utilities + CapEx Reserve<br><em>Maintenance, Tax, Insurance, Utilities grow at Expense Growth Rate each year. Year N multiplier = (1 + Expense Growth %)^(N−1)</em></td></tr>
+      <tr><td>NOI (Net Operating Income)</td><td>Effective Rent − Total Expenses</td></tr>
+      <tr><td>Annual Mortgage</td><td>Monthly Payment × 12</td></tr>
+      <tr><td><strong>Annual Cash Flow</strong></td><td><strong>NOI − Annual Mortgage</strong><br><em>This is the cash you actually receive (or pay out of pocket if negative) each year.</em></td></tr>
+      <tr><td>Total Cash Flow (simple)</td><td>Σ Annual CF for all years. Does not account for time value.</td></tr>
+      <tr><td>Total Cash Flow (compounded)</td><td>Σ (Annual CF<sub>y</sub> × (1 + Risk-Free Rate)^(N − y))<br><em>Each year's negative CF is compounded forward to the end of the hold period at the risk-free rate (e.g., 4% US 10yr bond). This shows the true opportunity cost: money spent subsidizing the property could have been earning 4%/yr instead.</em></td></tr>
+    </table>
+    <div class="decision-box" style="margin-top:8px">
+      <p><strong>Why does cash flow change each year?</strong> Rent grows at Rent Growth % while mortgage payments are fixed. Expenses grow at Expense Growth %. If rent grows faster than expenses, cash flow improves. If Expense Growth = 0% (flat expenses), the model is optimistic — in reality, property tax and insurance typically increase 2–3%/yr.</p>
+    </div>
+
+    <h4>Mortgage Amortization (per month)</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Monthly Interest</td><td>Remaining Balance × (Annual Rate ÷ 12)</td></tr>
+      <tr><td>Monthly Principal</td><td>Monthly Payment − Monthly Interest</td></tr>
+      <tr><td>New Balance</td><td>Previous Balance − Monthly Principal</td></tr>
+    </table>
+    <div class="decision-box" style="margin-top:8px">
+      <p>Each month, as the balance decreases, more of your payment goes to principal and less to interest. Over the hold period, this "principal paydown" builds equity even when cash flow is negative.</p>
+    </div>
+
+    <h4>Exit Analysis (at end of hold period)</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Current Market Value</td><td><strong>Synced from Option 1 Sale Price</strong> for consistency. The same value used to compute "Sell Now" net cash is used as the starting property value for appreciation.</td></tr>
+      <tr><td>Property Value at Exit</td><td>Current Market Value × (1 + Appreciation %)^(Hold Years)</td></tr>
+      <tr><td>Exit Selling Costs</td><td>Property Value at Exit × Exit Cost % (commission + closing + excise)</td></tr>
+      <tr><td>Remaining Mortgage</td><td>Balance after all monthly amortization payments over hold period</td></tr>
+      <tr><td><strong>Net Exit Proceeds</strong></td><td><strong>Property Value at Exit − Exit Selling Costs − Remaining Mortgage</strong><br><em>This is the check you receive when you sell.</em></td></tr>
+    </table>
+
+    <h4>Wealth Breakdown</h4>
+    <table>
+      <tr><th style="width:40%">Component</th><th>Formula</th><th>Sign</th></tr>
+      <tr><td>Forward Appreciation</td><td>Property Value at Exit − Current Market Value<br><em>Only the NEW appreciation from today onwards. Past appreciation (already embedded in today's market value) is excluded.</em></td><td style="color:var(--green)">+ adds wealth</td></tr>
+      <tr><td>Principal Paydown</td><td>Starting Mortgage Balance − Ending Mortgage Balance<br><em>Equity built through mortgage payments over the hold period.</em></td><td style="color:var(--green)">+ adds wealth</td></tr>
+      <tr><td>Cumulative Cash Flow</td><td>Sum of Annual Cash Flow for all years<br><em>If negative, you are subsidizing the property out of pocket each year.</em></td><td style="color:var(--red)">− if negative</td></tr>
+      <tr><td>Exit Selling Costs</td><td>−(Property Value at Exit × Exit Cost %)<br><em>Commission, closing, excise tax paid when you sell.</em></td><td style="color:var(--red)">− always costs</td></tr>
+    </table>
+    <div class="decision-box" style="margin-top:8px">
+      <p><strong>These four components should sum to your total forward profit:</strong><br>
+      Forward Appreciation + Principal Paydown + Cumulative Cash Flow − Exit Selling Costs = Total Forward Profit</p>
+    </div>
+
+    <h4>IRR (Internal Rate of Return) — Primary Return Metric</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Initial Equity</td><td><strong>Option 1 "Net Cash to Owner"</strong> = Sale Price − All Selling Costs − Mortgage Payoff<br><em>This is the actual cash you forgo by not selling today. Using raw Market Value − Mortgage would overstate your equity because it ignores the 7–9% in selling costs you'd pay to realize it.</em></td></tr>
+      <tr><td>IRR Cash Flows</td><td>Year 0: −Initial Equity (opportunity cost of not selling)<br>Year 1..N−1: Annual Cash Flow for that year<br>Year N: Annual Cash Flow + Net Exit Proceeds</td></tr>
+      <tr><td><strong>IRR</strong></td><td><strong>Solve for rate <em>r</em> where: Σ CF<sub>t</sub> / (1+r)<sup>t</sup> = 0</strong><br><em>This is the discount rate that makes the net present value of all cash flows equal to zero.</em></td></tr>
+    </table>
+    <div class="decision-box" style="margin-top:8px">
+      <p><strong>Why IRR instead of Simple ROI?</strong></p>
+      <p>Simple ROI = (Total Profit) / (Initial Equity) ignores <em>when</em> cash flows occur. If you lose $25K/yr for 5 years, that money could have earned ~4% elsewhere. IRR accounts for this by discounting each year's cash flow. A negative annual cash flow is penalized more heavily in early years because it compounds over time.</p>
+      <p><strong>Example:</strong> If IRR = 2.5% and your alternative investment earns 4%, the rental is destroying value — you'd be better off selling and investing the equity elsewhere.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Option 3: JV Redevelopment</h3>
+
+    <h4>Cost Structure</h4>
+    <table>
+      <tr><th style="width:40%">Category</th><th>Formula</th></tr>
+      <tr><td>Total Soft Costs</td><td>Architect + Structural + Civil + Survey + Arborist + Geo/Soil + Permitting</td></tr>
+      <tr><td>Construction Cost</td><td>Building Size (sqft) × Construction $/sqft<br><em>Auto-calculated from unit cost × area.</em></td></tr>
+      <tr><td>Total Hard Costs</td><td>Construction + GC Fee + Site Work + Additional + Utility Connection</td></tr>
+      <tr><td>Contingency Base</td><td>Soft Costs + Hard Costs + Insurance + Utility&Tax + LLC Overhead</td></tr>
+      <tr><td>Contingency</td><td>Contingency Base × Contingency %</td></tr>
+      <tr><td>WSST (WA Sales Tax)</td><td>(Contingency Base + Contingency) × WSST Rate</td></tr>
+      <tr><td>Total Carry Cost</td><td>Insurance + Utility&Tax + LLC + Contingency + WSST − Rental Income Offset</td></tr>
+      <tr><td>Loan Closing</td><td>Loan Amount × 1.75%</td></tr>
+      <tr><td>Interest Carry</td><td>Loan Amount × Interest Rate × (Loan Months ÷ 12)</td></tr>
+      <tr><td>Total Financing</td><td>Loan Closing + Interest Carry</td></tr>
+      <tr><td>Total Dev Cost (excl. land)</td><td>Soft + Hard + Carry + Financing</td></tr>
+      <tr><td><strong>Total Project Cost</strong></td><td><strong>Land Price + Total Dev Cost</strong></td></tr>
+    </table>
+
+    <h4>Financing Metrics</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Cash Investment</td><td>Total Project Cost − Construction Loan Amount<br><em>Cash needed after loan covers its portion.</em></td></tr>
+      <tr><td>Cash Needed After Land</td><td>Cash Investment − Land Price<br><em>Additional cash beyond land contribution.</em></td></tr>
+      <tr><td>LTC (Loan-to-Cost)</td><td>Loan Amount ÷ Total Project Cost</td></tr>
+    </table>
+
+    <h4>Sale & Profit</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Sale Price</td><td>Building Size (sqft) × Sale $/sqft<br><em>Auto-calculated from comp-based $/sqft.</em></td></tr>
+      <tr><td>Selling Costs</td><td>Sale Price × Selling Cost % (commission + title/escrow/tax + staging)</td></tr>
+      <tr><td>Net Sale Proceeds</td><td>Sale Price − Selling Costs</td></tr>
+      <tr><td>Gross Project Profit</td><td>Net Sale Proceeds − Total Project Cost</td></tr>
+      <tr><td>Project ROI</td><td>Gross Profit ÷ Total Project Cost</td></tr>
+      <tr><td>Project ROE</td><td>Gross Profit ÷ Cash Investment</td></tr>
+      <tr><td>Investor Avg Annual Return</td><td>Gross Profit ÷ Cash Investment ÷ (Loan Months ÷ 12)</td></tr>
+    </table>
+
+    <h4>JV Waterfall Distribution</h4>
+    <table>
+      <tr><th style="width:40%">Step</th><th>Logic</th></tr>
+      <tr><td>1. Repay Construction Loan</td><td>Loan amount is repaid first from sale proceeds.</td></tr>
+      <tr><td colspan="2"><strong>Equity Structure:</strong></td></tr>
+      <tr><td>2. Return of Capital</td><td>Remaining proceeds returned pro-rata based on capital contribution shares. My share = My Equity / (My Equity + Dev Cost).</td></tr>
+      <tr><td>3. Preferred Return</td><td>Total Capital × Preferred Rate × (Months ÷ 12), split pro-rata by capital share.</td></tr>
+      <tr><td>4. Profit Split</td><td>All remaining proceeds split by My % / Dev %.</td></tr>
+      <tr><td colspan="2"><strong>Seller Note Structure:</strong></td></tr>
+      <tr><td>2. Seller Note Repayment</td><td>My equity + interest (at preferred rate) repaid first.</td></tr>
+      <tr><td>3. Developer Capital Return</td><td>Developer gets their invested capital back.</td></tr>
+      <tr><td>4. Developer Preferred</td><td>Developer gets preferred return on their capital.</td></tr>
+      <tr><td>5. Profit Split</td><td>Remaining split by My % / Dev %.</td></tr>
+      <tr><td colspan="2"><strong>Guaranteed Base + Upside:</strong></td></tr>
+      <tr><td>2. Guaranteed Payout</td><td>My guaranteed minimum amount paid first.</td></tr>
+      <tr><td>3–4. Developer Capital + Preferred</td><td>Same as seller note structure.</td></tr>
+      <tr><td>5. Upside Split</td><td>Remaining split by My % / Dev %.</td></tr>
+    </table>
+
+    <h4>My Returns (After Waterfall)</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>My Equity Contribution</td><td>Land Price − Mortgage Payoff</td></tr>
+      <tr><td>My Pre-Tax Payout</td><td>Sum of all "My Distribution" steps in waterfall</td></tr>
+      <tr><td>My Profit</td><td>My Payout − My Equity Contribution</td></tr>
+      <tr><td>My Tax</td><td>max(0, My Profit × Tax Rate)</td></tr>
+      <tr><td>My Net After Tax</td><td>My Payout − My Tax</td></tr>
+      <tr><td>My ROI</td><td>(My Net After Tax − My Equity) ÷ My Equity</td></tr>
+      <tr><td>My Annualized Return</td><td>(My Net After Tax ÷ My Equity)^(12 ÷ Loan Months) − 1</td></tr>
+    </table>
+
+    <h4>IRR (Internal Rate of Return) — Primary Return Metric</h4>
+    <table>
+      <tr><th style="width:40%">Metric</th><th>Formula</th></tr>
+      <tr><td>Initial Equity</td><td><strong>Option 1 "Net Cash to Owner"</strong> — same as rental analysis. What you forgo by choosing JV instead of selling today.</td></tr>
+      <tr><td>My Mortgage During Construction</td><td>You continue paying the existing mortgage during the construction period. Jeff pays all development costs. No rent income, no maintenance costs.<br><em>Total = Monthly Payment × Loan Months. Remaining balance at sale is paid off from sale proceeds before waterfall.</em></td></tr>
+      <tr><td>IRR Cash Flows</td><td>Year 0: −Initial Equity (opportunity cost of not selling)<br>Year 1..N−1: −Annual Mortgage Payments (your only out-of-pocket cost)<br>Year N: −Mortgage Payments + My Net After Tax payout<br><em>Structurally identical to Rental IRR, but with mortgage-only costs (no maintenance, tax, insurance) and a larger final payout.</em></td></tr>
+      <tr><td><strong>IRR</strong></td><td><strong>Solve for rate <em>r</em> where: Σ CF<sub>t</sub> / (1+r)<sup>t</sup> = 0</strong></td></tr>
+      <tr><td>NPV at Risk-Free Rate</td><td>Σ CF<sub>t</sub> / (1 + Risk-Free Rate)<sup>t</sup><br><em>If positive, JV beats risk-free bonds. Uses same risk-free rate input as Option 2.</em></td></tr>
+      <tr><td>Spread</td><td>IRR − Risk-Free Rate. Positive = JV adds value over bonds.</td></tr>
+    </table>
+    <div class="decision-box" style="margin-top:8px">
+      <p><strong>JV vs Rental IRR:</strong> Both options require you to keep paying the mortgage. JV eliminates maintenance/tax/insurance costs but also eliminates rent income. The payoff comes from the development profit split. JV typically has higher IRR due to larger payout over a shorter timeframe, but carries significantly more risk (construction delays, cost overruns, market timing).</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Sensitivity & Break-Even</h3>
+    <table>
+      <tr><th style="width:40%">Table</th><th>Description</th></tr>
+      <tr><td>Sale $/sqft × Const $/sqft</td><td>Grid showing My Net After Tax for each combination. Green = beats Sell Now by >10%. Yellow = within ±10%. Red = worse.</td></tr>
+      <tr><td>Sale $/sqft × Loan Rate</td><td>Same color logic, varying financing cost instead of construction cost.</td></tr>
+      <tr><td>Break-Even Sale $/sqft</td><td>Binary search: minimum $/sqft where JV net ≥ Sell Now net.</td></tr>
+      <tr><td>Max Construction $/sqft</td><td>Binary search: maximum $/sqft where JV net ≥ Sell Now net.</td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Key Concepts & Glossary</h3>
+    <table>
+      <tr><th style="width:25%">Term</th><th>Definition</th></tr>
+      <tr><td><strong>Forward Appreciation</strong></td><td>The increase in property value <em>from today onwards only</em>. Calculated as: (Current Value × (1 + Rate)^Years) − Current Value. Past appreciation is already embedded in today's market value and is <strong>not</strong> counted as a return. If the property is worth $1.5M today and grows 3%/yr for 5 years, forward appreciation = $1.5M × (1.03⁵ − 1) = ~$244K.</td></tr>
+      <tr><td><strong>Initial Equity</strong></td><td>The actual cash you'd receive if you sold today (Option 1's "Net Cash to Owner"). Equals Sale Price − Selling Costs − Mortgage. This is the true opportunity cost — not the theoretical Market Value − Mortgage, which ignores the ~8% selling costs needed to liquidate.</td></tr>
+      <tr><td><strong>NOI</strong></td><td>Net Operating Income. Rental income after all operating expenses but before mortgage payments. The property-level profitability before financing.</td></tr>
+      <tr><td><strong>Cap Rate</strong></td><td>NOI ÷ Market Value. A financing-independent measure of property yield. Typical for Bellevue SFH: 1.5–3%.</td></tr>
+      <tr><td><strong>IRR</strong></td><td>Internal Rate of Return. The annualized return that accounts for the timing and size of every cash flow. Unlike simple ROI which just divides total profit by investment, IRR penalizes early negative cash flows because that money could have been earning returns elsewhere.</td></tr>
+      <tr><td><strong>Risk-Free Rate</strong></td><td>The return you could earn with zero risk (typically US 10-year Treasury bond, ~4% in 2025). Used to calculate the true opportunity cost of negative cash flows: each dollar you feed into the property could instead be earning this rate risk-free.</td></tr>
+      <tr><td><strong>Expense Growth Rate</strong></td><td>Annual increase in operating expenses (property tax, insurance, maintenance, utilities). 0% = flat (optimistic). 2–3% reflects typical real-world escalation. PM fee is already a % of rent and thus grows automatically with rent.</td></tr>
+      <tr><td><strong>LTC</strong></td><td>Loan-to-Cost. Construction loan amount ÷ total project cost. Lenders typically cap at 60–75%.</td></tr>
+      <tr><td><strong>WSST</strong></td><td>Washington State Sales Tax applied to construction costs. Currently 10.2% for Bellevue.</td></tr>
+      <tr><td><strong>GC Fee</strong></td><td>General Contractor management fee, typically 10–15% of hard construction costs.</td></tr>
+      <tr><td><strong>Preferred Return</strong></td><td>A hurdle rate on invested capital that must be paid before profit splitting begins. Protects the capital contributor.</td></tr>
+      <tr><td><strong>Waterfall</strong></td><td>The sequential order in which sale proceeds are distributed: first repay debt, then return capital, then preferred returns, then profit split.</td></tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ==================== MODALS ==================== -->
+<div class="modal-overlay" id="modal-save">
+  <div class="modal">
+    <h3>Save Scenario</h3>
+    <input type="text" id="save-name" placeholder="Enter scenario name…">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-accent" onclick="doSave()">Save</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-load">
+  <div class="modal">
+    <h3>Load Scenario</h3>
+    <ul class="scenario-list" id="scenario-list"></ul>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModals()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="disclaimer">
+  This calculator is for scenario planning only and is not legal, tax, or investment advice.
+  Consult qualified professionals before making financial decisions.
+</div>
+
+<script>
+// ============================================================
+//  UTILITY FUNCTIONS
+// ============================================================
+const $ = id => document.getElementById(id);
+const val = id => { const el = $(id); return el ? (parseFloat(el.value) || 0) : 0; };
+const setVal = (id, v) => { const el = $(id); if (el) el.value = typeof v === 'number' ? Math.round(v) : v; };
+const setValExact = (id, v) => { const el = $(id); if (el) el.value = v; };
+
+function fmt(n) {
+  if (n == null || isNaN(n)) return '$0';
+  const neg = n < 0;
+  const abs = Math.abs(Math.round(n));
+  return (neg ? '-$' : '$') + abs.toLocaleString('en-US');
+}
+function fmtPct(n) { return (n == null || isNaN(n)) ? '0.0%' : (n * 100).toFixed(1) + '%'; }
+function fmtMo(n) { return Math.round(n) + ' mo'; }
+function colorClass(n) { return n > 0 ? 'positive' : n < 0 ? 'negative' : ''; }
+
+function calcIRR(cashFlows, guess) {
+  let rate = guess || 0.05;
+  for (let i = 0; i < 300; i++) {
+    let npv = 0, dnpv = 0;
+    for (let t = 0; t < cashFlows.length; t++) {
+      const d = Math.pow(1 + rate, t);
+      npv += cashFlows[t] / d;
+      if (t > 0) dnpv -= t * cashFlows[t] / (d * (1 + rate));
+    }
+    if (Math.abs(npv) < 1e-7) return rate;
+    if (Math.abs(dnpv) < 1e-12) break;
+    rate -= npv / dnpv;
+    if (rate < -0.99) rate = -0.5;
+    if (rate > 10) rate = 0.5;
+  }
+  return rate;
+}
+
+let R = { opt1: {}, opt2: {}, opt3: {} };
+
+// ============================================================
+//  DROPDOWN HANDLERS
+// ============================================================
+function applyPriceSource() {
+  const src = $('s1-price-source').value;
+  const values = { comps: 1275000, redfin: 1534901, zillow: 1509300, county: 1358000 };
+  if (values[src]) setVal('s1-sale-price', values[src]);
+  recalcAll();
+}
+
+function updateAutoCalc() {
+  const sqft = val('s3-building-sqft');
+  const cPsf = val('s3-construction-psf');
+  setVal('s3-construction', sqft * cPsf);
+  const sPsf = val('s3-sale-psf');
+  setVal('s3-sale-base', sqft * sPsf);
+}
+
+// ============================================================
+//  OPTION 1: SELL NOW
+// ============================================================
+function calcOption1() {
+  const price = val('s1-sale-price');
+  const commission = price * val('s1-commission') / 100;
+  const closing = price * val('s1-closing-pct') / 100;
+  const mortgage = val('s1-mortgage');
+  const repair = val('s1-repair');
+  const excise = price * val('s1-excise') / 100;
+  const capTax = val('s1-captax');
+  const other = val('s1-other');
+
+  const totalCosts = commission + closing + repair + excise + capTax + other;
+  const netCash = price - totalCosts - mortgage;
+
+  const sellCostPct = price > 0 ? totalCosts / price : 0;
+  R.opt1 = { price, commission, closing, mortgage, repair, excise, capTax, other, totalCosts, netCash, sellCostPct };
+
+  setVal('s2-market-value', price);
+
+  $('res-opt1').innerHTML = `
+    <div class="result-item"><div class="r-label">Gross Sale Proceeds</div><div class="r-value">${fmt(price)}</div></div>
+    <div class="result-item"><div class="r-label">Agent Commission</div><div class="r-value">${fmt(commission)}</div></div>
+    <div class="result-item"><div class="r-label">Closing Costs</div><div class="r-value">${fmt(closing)}</div></div>
+    <div class="result-item"><div class="r-label">Repair / Staging</div><div class="r-value">${fmt(repair)}</div></div>
+    <div class="result-item"><div class="r-label">Excise / Transfer Tax</div><div class="r-value">${fmt(excise)}</div></div>
+    <div class="result-item"><div class="r-label">Capital Gains Tax</div><div class="r-value">${fmt(capTax)}</div></div>
+    <div class="result-item"><div class="r-label">Other Costs</div><div class="r-value">${fmt(other)}</div></div>
+    <div class="result-item"><div class="r-label">Total Selling Costs</div><div class="r-value negative">${fmt(totalCosts)}</div></div>
+    <div class="result-item"><div class="r-label">Mortgage Payoff</div><div class="r-value">${fmt(mortgage)}</div></div>
+    <div class="result-item full highlight"><div class="r-label">Net Cash to Owner</div><div class="r-value ${colorClass(netCash)}" style="font-size:24px">${fmt(netCash)}</div></div>
+  `;
+}
+
+// ============================================================
+//  OPTION 2: KEEP AS RENTAL
+// ============================================================
+function calcOption2() {
+  const mktVal = val('s2-market-value');
+  const rent = val('s2-rent');
+  const vacancy = val('s2-vacancy') / 100;
+  const pmFee = val('s2-pm-fee') / 100;
+  const baseMaintenance = val('s2-maintenance');
+  const basePropTax = val('s2-prop-tax');
+  const baseInsurance = val('s2-insurance');
+  const hoa = val('s2-hoa');
+  const baseUtilities = val('s2-utilities');
+  const capex = val('s2-capex');
+  const mortgagePmt = val('s2-mortgage-pmt');
+  const intRate = val('s2-int-rate') / 100;
+  const mortgageBal = val('s2-mortgage-bal');
+  const appreciation = val('s2-appreciation') / 100;
+  const rentGrowth = val('s2-rent-growth') / 100;
+  const expenseGrowth = val('s2-expense-growth') / 100;
+  const riskFreeRate = val('s2-risk-free') / 100;
+  const holdYears = Math.max(1, Math.round(val('s2-hold-years')));
+  const exitCostPct = val('s2-exit-cost') / 100;
+
+  let balance = mortgageBal;
+  let monthlyRate = intRate / 12;
+  let curRent = rent;
+  let curValue = mktVal;
+  let totalCashFlow = 0;
+  let yearlyData = [];
+
+  for (let y = 1; y <= holdYears; y++) {
+    const expMult = Math.pow(1 + expenseGrowth, y - 1);
+    const grossRent = curRent * 12;
+    const effectiveRent = grossRent * (1 - vacancy);
+    const pm = effectiveRent * pmFee;
+    const maintenance = baseMaintenance * expMult;
+    const propTax = basePropTax * expMult;
+    const insurance = baseInsurance * expMult;
+    const utilities = baseUtilities * expMult;
+    const totalExpenses = pm + maintenance + propTax + insurance + hoa + utilities + capex;
+    const noi = effectiveRent - totalExpenses;
+    const annualMortgage = mortgagePmt * 12;
+
+    let yearInterest = 0;
+    let yearPrincipal = 0;
+    for (let m = 0; m < 12; m++) {
+      if (balance > 0) {
+        const mi = balance * monthlyRate;
+        const mp = Math.min(mortgagePmt - mi, balance);
+        yearInterest += mi;
+        yearPrincipal += mp;
+        balance = Math.max(0, balance - mp);
+      }
+    }
+
+    const annualCF = noi - annualMortgage;
+    totalCashFlow += annualCF;
+    curValue *= (1 + appreciation);
+    const equity = curValue - balance;
+
+    yearlyData.push({
+      year: y, grossRent, effectiveRent, totalExpenses, noi,
+      annualMortgage, annualCF, propertyValue: curValue, mortgageBalance: balance, equity,
+      yearInterest, yearPrincipal, rentAmount: curRent
+    });
+
+    curRent *= (1 + rentGrowth);
+  }
+
+  const exitValue = curValue;
+  const exitCosts = exitValue * exitCostPct;
+  const netExitProceeds = exitValue - exitCosts - balance;
+  const totalNetWorth = totalCashFlow + netExitProceeds;
+  const sellNowNet = R.opt1.netCash || 0;
+  const initialEquity = sellNowNet;
+
+  const totalPrincipalPaydown = mortgageBal - balance;
+  const forwardAppreciation = exitValue - mktVal;
+
+  // Compounded cash flow at risk-free rate (FV of all CFs at end of hold)
+  let compoundedCF = 0;
+  yearlyData.forEach((d, i) => {
+    compoundedCF += d.annualCF * Math.pow(1 + riskFreeRate, holdYears - i - 1);
+  });
+
+  // IRR
+  const irrFlows = [-initialEquity];
+  yearlyData.forEach((d, i) => {
+    if (i === holdYears - 1) {
+      irrFlows.push(d.annualCF + netExitProceeds);
+    } else {
+      irrFlows.push(d.annualCF);
+    }
+  });
+  const irr = calcIRR(irrFlows);
+  const annualizedReturn = irr;
+
+  // NPV at risk-free rate: what the deal is worth vs parking money in bonds
+  let npvAtRiskFree = 0;
+  irrFlows.forEach((cf, t) => {
+    npvAtRiskFree += cf / Math.pow(1 + riskFreeRate, t);
+  });
+
+  const yr1 = yearlyData[0] || {};
+  const yrN = yearlyData[holdYears - 1] || {};
+  R.opt2 = {
+    monthlyCF: yr1.annualCF / 12, annualCF: yr1.annualCF, totalCashFlow,
+    exitValue, exitCosts, netExitProceeds, balance, totalNetWorth,
+    initialEquity, irr, annualizedReturn, holdYears, yearlyData
+  };
+
+  const irrFlowLabels = irrFlows.map((f, i) => `<span style="color:${f >= 0 ? 'var(--green)' : 'var(--red)'}">${i === 0 ? 'Yr0' : 'Yr'+i}: ${fmt(f)}</span>`).join(' → ');
+
+  $('res-opt2').innerHTML = `
+    <div style="border:2px solid var(--accent);border-radius:8px;padding:14px 16px;margin-bottom:18px;background:var(--accent-light)">
+      <h4 style="margin:0 0 8px;font-size:14px;color:var(--accent);font-weight:700">IRR — TRUE ANNUALIZED RETURN</h4>
+      <div class="result-grid">
+        <div class="result-item full highlight"><div class="r-label">IRR (Annualized Return, Time-Value Adjusted)</div><div class="r-value ${colorClass(irr)}" style="font-size:28px">${fmtPct(irr)}</div></div>
+        <div class="result-item"><div class="r-label">Risk-Free Rate (US 10yr Bond)</div><div class="r-value">${fmtPct(riskFreeRate)}</div></div>
+        <div class="result-item"><div class="r-label">Spread (IRR − Risk-Free)</div><div class="r-value ${colorClass(irr - riskFreeRate)}" style="font-weight:700">${irr - riskFreeRate >= 0 ? '+' : ''}${((irr - riskFreeRate) * 100).toFixed(1)}%</div></div>
+        <div class="result-item full" style="background:${npvAtRiskFree >= 0 ? '#ecfdf5' : '#fef2f2'}"><div class="r-label">NPV at Risk-Free Rate <span class="tip" data-tip="If positive: this deal beats a ${fmtPct(riskFreeRate)} bond. If negative: you'd be better off selling and buying bonds.">?</span></div><div class="r-value ${colorClass(npvAtRiskFree)}" style="font-size:20px">${fmt(npvAtRiskFree)}</div></div>
+      </div>
+      <div style="background:#f0f4ff;border:1px solid #c7d7fe;border-radius:6px;padding:12px 14px;margin-top:10px;font-size:12px;line-height:1.7">
+        <div style="margin-bottom:6px"><strong>Input A — Initial Equity = Sell-Now Net Cash:</strong> <strong>${fmt(initialEquity)}</strong><br>
+          <span style="color:var(--muted)">From Option 1: ${fmt(R.opt1.price)} sale − ${fmt(R.opt1.totalCosts)} costs − ${fmt(R.opt1.mortgage)} mortgage. This is what you forgo by holding.</span></div>
+        <div style="margin-bottom:6px"><strong>Input B — Annual Cash Flows (see below):</strong> Yr1 ${fmt(yr1.annualCF)} → Yr${holdYears} ${fmt(yrN.annualCF)}<br>
+          <span style="color:var(--muted)">Rent grows ${fmtPct(rentGrowth)}/yr, expenses grow ${fmtPct(expenseGrowth)}/yr, mortgage fixed at ${fmt(mortgagePmt)}/mo</span></div>
+        <div style="margin-bottom:6px"><strong>Input C — Net Exit Proceeds (see below):</strong> <strong>${fmt(netExitProceeds)}</strong></div>
+        <div style="border-top:1px solid #c7d7fe;padding-top:8px;margin-top:4px"><strong>IRR Cash Flow Series:</strong><br>${irrFlowLabels}<br>
+          <span style="color:var(--muted)">IRR solves for rate <em>r</em> where NPV = 0. IRR itself doesn't change with risk-free rate — but the <strong>Spread</strong> and <strong>NPV</strong> above do. NPV discounts these cash flows at ${fmtPct(riskFreeRate)}: if positive, holding beats bonds.</span></div>
+      </div>
+    </div>
+
+    <div style="border-left:3px solid var(--border);padding-left:14px;margin-bottom:18px">
+      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">ANNUAL CASH FLOW</h4>
+      <div class="result-grid">
+        <div class="result-item"><div class="r-label">Yr 1 Monthly Net Cash Flow</div><div class="r-value ${colorClass(yr1.annualCF/12)}">${fmt(yr1.annualCF/12)}</div></div>
+        <div class="result-item"><div class="r-label">Yr 1 Annual Net Cash Flow</div><div class="r-value ${colorClass(yr1.annualCF)}">${fmt(yr1.annualCF)}</div></div>
+        <div class="result-item"><div class="r-label">Total Cash Flow (simple sum, ${holdYears} yrs)</div><div class="r-value ${colorClass(totalCashFlow)}">${fmt(totalCashFlow)}</div></div>
+        <div class="result-item"><div class="r-label">Total Cash Flow (compounded at ${fmtPct(riskFreeRate)} risk-free) <span class="tip" data-tip="Each year's negative CF compounded forward at the risk-free rate to year ${holdYears}. Shows the true opportunity cost of subsidizing this property.">?</span></div><div class="r-value ${colorClass(compoundedCF)}">${fmt(compoundedCF)}</div></div>
+      </div>
+    </div>
+
+    <div style="border-left:3px solid var(--border);padding-left:14px;margin-bottom:18px">
+      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">EXIT ANALYSIS (YEAR ${holdYears})</h4>
+      <div class="result-grid">
+        <div class="result-item full"><div class="r-label">Property Value at Exit (${fmtPct(appreciation)}/yr × ${holdYears} yrs)</div><div class="r-value">${fmt(exitValue)}</div></div>
+        <div class="result-item"><div class="r-label">(−) Exit Selling Costs (${val('s2-exit-cost')}%)</div><div class="r-value negative">${fmt(exitCosts)}</div></div>
+        <div class="result-item"><div class="r-label">(−) Remaining Mortgage</div><div class="r-value">${fmt(balance)}</div></div>
+        <div class="result-item full highlight"><div class="r-label">= Net Exit Proceeds</div><div class="r-value ${colorClass(netExitProceeds)}" style="font-size:20px">${fmt(netExitProceeds)}</div></div>
+      </div>
+    </div>
+
+    <div style="border-left:3px solid #e5e7eb;padding-left:14px;margin-top:24px;opacity:0.8">
+      <h4 style="margin:0 0 10px;font-size:12px;color:#9ca3af;font-weight:600;font-style:italic">WEALTH BREAKDOWN — Return Decomposition</h4>
+      <div class="result-grid">
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Forward Appreciation (${fmtPct(appreciation)}/yr)</div><div class="r-value ${colorClass(forwardAppreciation)}">${fmt(forwardAppreciation)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Principal Paydown (${holdYears} yrs)</div><div class="r-value ${colorClass(totalPrincipalPaydown)}">${fmt(totalPrincipalPaydown)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Cumulative Cash Flow</div><div class="r-value ${colorClass(totalCashFlow)}">${fmt(totalCashFlow)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Exit Selling Costs</div><div class="r-value ${colorClass(-exitCosts)}">${fmt(-exitCosts)}</div></div>
+      </div>
+    </div>
+  `;
+
+  const tbl = $('tbl-opt2-yearly');
+  tbl.className = 'yearly-tbl';
+  tbl.innerHTML = `<thead><tr>
+    <th>Yr</th><th>Rent/mo<br><span style="font-weight:400;font-size:9px">+${fmtPct(rentGrowth)}/yr</span></th>
+    <th>Gross Rent</th>
+    <th>Expenses<br><span style="font-weight:400;font-size:9px">+${fmtPct(expenseGrowth)}/yr</span></th>
+    <th>NOI</th><th>Mortgage<br><span style="font-weight:400;font-size:9px">fixed</span></th>
+    <th>Cash Flow</th><th>Prop Value<br><span style="font-weight:400;font-size:9px">+${fmtPct(appreciation)}/yr</span></th><th>Equity</th></tr></thead><tbody>` +
+    yearlyData.map(d => `<tr>
+      <td>${d.year}</td><td>${fmt(d.rentAmount)}</td><td>${fmt(d.grossRent)}</td>
+      <td>${fmt(d.totalExpenses)}</td><td>${fmt(d.noi)}</td><td>${fmt(d.annualMortgage)}</td>
+      <td class="${d.annualCF >= 0 ? '' : 'negative'}">${fmt(d.annualCF)}</td>
+      <td>${fmt(d.propertyValue)}</td><td>${fmt(d.equity)}</td>
+    </tr>`).join('') + '</tbody>';
+}
+
+// ============================================================
+//  OPTION 3: JV REDEVELOPMENT — Core calculation
+// ============================================================
+function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
+  // A. Land / Property
+  const landPrice = val('s3-as-is-value');
+  const mortgage = val('s3-mortgage');
+  const closingInto = val('s3-closing');
+  const basis = val('s3-basis');
+
+  // B. Soft costs
+  const architect = val('s3-architect');
+  const structural = val('s3-structural');
+  const civil = val('s3-civil');
+  const survey = val('s3-survey');
+  const arborist = val('s3-arborist');
+  const geoSoil = val('s3-geo-soil');
+  const buildPermit = val('s3-build-permit');
+  const totalSoftCost = architect + structural + civil + survey + arborist + geoSoil + buildPermit;
+
+  // C. Hard construction
+  const buildingSqft = val('s3-building-sqft');
+  const constructionPsf = overrideConstPsf != null ? overrideConstPsf : val('s3-construction-psf');
+  const constructionCost = buildingSqft * constructionPsf;
+  const gcFee = val('s3-gc-fee');
+  const siteWork = val('s3-sitework');
+  const additional = val('s3-additional');
+  const utilityConn = val('s3-utility-conn');
+  const totalHardCost = constructionCost + gcFee + siteWork + additional + utilityConn;
+
+  // D. Carry & Overhead
+  const insuranceBond = val('s3-insurance-bond');
+  const utilityTax = val('s3-utility-tax');
+  const llcOverhead = val('s3-llc-overhead');
+  const contingencyPct = val('s3-contingency') / 100;
+  const wsstRate = val('s3-wsst-rate') / 100;
+  const rentalIncome = val('s3-rental-income');
+
+  // Contingency base = soft + hard + carry items (excl WSST, financing, rental offset)
+  const contingencyBase = totalSoftCost + totalHardCost + insuranceBond + utilityTax + llcOverhead;
+  const contingency = contingencyBase * contingencyPct;
+
+  // WSST base = same items + contingency
+  const wsstBase = contingencyBase + contingency;
+  const wsst = wsstBase * wsstRate;
+
+  const totalCarryCost = insuranceBond + utilityTax + llcOverhead + contingency + wsst - rentalIncome;
+
+  // E. Financing
+  const loanAmount = val('s3-loan-amount');
+  const loanRate = overrideLoanRate != null ? overrideLoanRate / 100 : val('s3-loan-rate') / 100;
+  const loanMonths = val('s3-loan-months');
+  const loanClosing = loanAmount * 0.0175;
+  const interestCarry = loanAmount * loanRate * (loanMonths / 12);
+  const totalFinancing = loanClosing + interestCarry;
+
+  // Total development cost (everything except land)
+  const totalDevCost = totalSoftCost + totalHardCost + totalCarryCost + totalFinancing;
+
+  // Total project cost (including land)
+  const totalProjectCost = landPrice + totalDevCost;
+
+  // Cash invest = total project cost - loan
+  const cashInvest = totalProjectCost - loanAmount;
+  const cashAfterLand = cashInvest - landPrice;
+  const ltc = totalProjectCost > 0 ? loanAmount / totalProjectCost : 0;
+
+  // F. Sale
+  const salePsf = overrideSalePsf != null ? overrideSalePsf : val('s3-sale-psf');
+  const saleBase = buildingSqft * salePsf;
+  const sellClosePct = val('s3-sell-close-pct') / 100;
+  const sellingCosts = saleBase * sellClosePct;
+  const netSaleProceeds = saleBase - sellingCosts;
+
+  // Gross profit
+  const grossProfit = netSaleProceeds - totalProjectCost;
+
+  // ROI and ROE
+  const totalROI = totalProjectCost > 0 ? grossProfit / totalProjectCost : 0;
+  const totalROE = cashInvest > 0 ? grossProfit / cashInvest : 0;
+
+  // Project duration = loan months as proxy
+  const totalMonths = loanMonths;
+
+  // G. My mortgage payments during construction
+  const mortgagePmt = val('s2-mortgage-pmt');
+  const monthlyMortgageRate = val('s2-int-rate') / 100 / 12;
+  let jvMortgageBalance = mortgage;
+  let totalMortgagePayments = 0;
+  const fullYears = Math.ceil(loanMonths / 12);
+  let yearlyMortgageCF = [];
+
+  for (let y = 1; y <= fullYears; y++) {
+    const monthsThisYear = Math.min(12, loanMonths - (y - 1) * 12);
+    let yearPayments = 0;
+    for (let m = 0; m < monthsThisYear; m++) {
+      if (jvMortgageBalance > 0) {
+        const mi = jvMortgageBalance * monthlyMortgageRate;
+        const mp = Math.min(mortgagePmt - mi, jvMortgageBalance);
+        jvMortgageBalance = Math.max(0, jvMortgageBalance - mp);
+        yearPayments += mortgagePmt;
+      }
+    }
+    totalMortgagePayments += yearPayments;
+    yearlyMortgageCF.push(-yearPayments);
+  }
+  const remainingMortgageAtSale = jvMortgageBalance;
+
+  // JV Split — equity contributions (exclude debt)
+  // My equity = land value minus mortgage (net land equity)
+  const myContribution = landPrice - mortgage;
+  // Jeff's cash equity = dev costs minus what the construction loan covers
+  // The loan is secured by the whole project; Jeff's out-of-pocket is dev costs beyond the loan
+  const devContribution = Math.max(0, totalDevCost - loanAmount);
+
+  const myPct = val('s3-my-pct') / 100;
+  const devPct = val('s3-dev-pct') / 100;
+  const prefReturn = val('s3-pref-return') / 100;
+  const structure = $('s3-structure').value;
+  const minPayout = val('s3-min-payout');
+
+  const taxRate = val('s3-tax-rate') / 100;
+  const legal = val('s3-legal');
+  const accounting = val('s3-accounting');
+  const otherTxn = val('s3-other-txn');
+
+  // ---- Waterfall Distribution ----
+  let myPayout = 0, devPayout = 0;
+  let waterfallSteps = [];
+  let remaining = netSaleProceeds;
+
+  // Pay off construction loan first (lien on project)
+  remaining -= loanAmount;
+  waterfallSteps.push({ step: 'Repay Construction Loan', me: 0, dev: 0, remaining });
+
+  // Pay off remaining mortgage (lien on land, paid at closing by title company)
+  remaining -= remainingMortgageAtSale;
+  waterfallSteps.push({ step: 'Pay Off Remaining Mortgage', me: 0, dev: 0, remaining });
+
+  if (structure === 'equity') {
+    const totalCap = myContribution + devContribution;
+    const myCapShare = totalCap > 0 ? myContribution / totalCap : 0;
+    const capitalToReturn = Math.min(remaining, totalCap);
+    const myCapReturn = capitalToReturn * myCapShare;
+    const devCapReturn = capitalToReturn * (1 - myCapShare);
+    remaining -= capitalToReturn;
+    waterfallSteps.push({ step: 'Return of Capital', me: myCapReturn, dev: devCapReturn, remaining });
+
+    const prefAmt = totalCap * prefReturn * (totalMonths / 12);
+    const myPref = Math.min(remaining, prefAmt * myCapShare);
+    const devPref = Math.min(remaining - myPref, prefAmt * (1 - myCapShare));
+    remaining -= (myPref + devPref);
+    waterfallSteps.push({ step: 'Preferred Return', me: myPref, dev: devPref, remaining });
+
+    const myProfit = remaining * myPct;
+    const devProfit = remaining * devPct;
+    remaining -= (myProfit + devProfit);
+    waterfallSteps.push({ step: 'Profit Split', me: myProfit, dev: devProfit, remaining });
+
+    myPayout = myCapReturn + myPref + myProfit;
+    devPayout = devCapReturn + devPref + devProfit;
+
+  } else if (structure === 'note') {
+    const noteInterest = myContribution * prefReturn * (totalMonths / 12);
+    const notePayout = Math.min(remaining, myContribution + noteInterest);
+    remaining -= notePayout;
+    waterfallSteps.push({ step: 'Seller Note Repayment', me: notePayout, dev: 0, remaining });
+
+    const devCapReturn = Math.min(remaining, devContribution);
+    remaining -= devCapReturn;
+    waterfallSteps.push({ step: 'Developer Capital Return', me: 0, dev: devCapReturn, remaining });
+
+    const devPref = Math.min(remaining, devContribution * prefReturn * (totalMonths / 12));
+    remaining -= devPref;
+    waterfallSteps.push({ step: 'Developer Preferred Return', me: 0, dev: devPref, remaining });
+
+    const myProfit = remaining * myPct;
+    const devProfit = remaining * devPct;
+    remaining -= (myProfit + devProfit);
+    waterfallSteps.push({ step: 'Profit Split', me: myProfit, dev: devProfit, remaining });
+
+    myPayout = notePayout + myProfit;
+    devPayout = devCapReturn + devPref + devProfit;
+
+  } else {
+    const guaranteed = Math.min(remaining, minPayout);
+    remaining -= guaranteed;
+    waterfallSteps.push({ step: 'Guaranteed Payout to Me', me: guaranteed, dev: 0, remaining });
+
+    const devCapReturn = Math.min(remaining, devContribution);
+    remaining -= devCapReturn;
+    waterfallSteps.push({ step: 'Developer Capital Return', me: 0, dev: devCapReturn, remaining });
+
+    const devPref = Math.min(remaining, devContribution * prefReturn * (totalMonths / 12));
+    remaining -= devPref;
+    waterfallSteps.push({ step: 'Developer Preferred Return', me: 0, dev: devPref, remaining });
+
+    const myUpside = remaining * myPct;
+    const devUpside = remaining * devPct;
+    remaining -= (myUpside + devUpside);
+    waterfallSteps.push({ step: 'Upside Split', me: myUpside, dev: devUpside, remaining });
+
+    myPayout = guaranteed + myUpside;
+    devPayout = devCapReturn + devPref + devUpside;
+  }
+
+  const myProfitAmt = myPayout - myContribution;
+  const myTax = Math.max(0, myProfitAmt * taxRate);
+  const myNetAfterTax = myPayout - myTax;
+
+  const totalYears = totalMonths / 12;
+  const myROI = myContribution > 0 ? (myNetAfterTax - myContribution) / myContribution : 0;
+  const myAnnReturn = totalYears > 0 && myContribution > 0 ?
+    Math.pow(Math.max(0, myNetAfterTax / myContribution), 1 / totalYears) - 1 : 0;
+
+  const investorAnnReturn = totalYears > 0 && cashInvest > 0 ?
+    grossProfit / cashInvest / totalYears : 0;
+
+  // IRR using sell-now net cash as opportunity cost + mortgage payments during construction
+  const sellNowNet = R.opt1.netCash || 0;
+  const initialEquity = sellNowNet;
+  // Mortgage already paid from sale proceeds in waterfall; my net cash = waterfall payout after tax
+  const myNetCashAtSale = myNetAfterTax;
+  const irrFlows = [-initialEquity];
+  for (let y = 0; y < yearlyMortgageCF.length; y++) {
+    if (y === yearlyMortgageCF.length - 1) {
+      irrFlows.push(yearlyMortgageCF[y] + myNetCashAtSale);
+    } else {
+      irrFlows.push(yearlyMortgageCF[y]);
+    }
+  }
+  const irr = irrFlows.length > 1 ? calcIRR(irrFlows) : 0;
+
+  // NPV at risk-free rate
+  const riskFreeRate = val('s2-risk-free') / 100;
+  let jvNpv = 0;
+  irrFlows.forEach((cf, t) => {
+    jvNpv += cf / Math.pow(1 + riskFreeRate, t);
+  });
+
+  return {
+    landPrice, mortgage, closingInto, basis, myContribution, devContribution,
+    totalSoftCost, totalHardCost, totalCarryCost, totalFinancing,
+    totalDevCost, totalProjectCost, contingency, wsst,
+    loanAmount, loanClosing, interestCarry,
+    cashInvest, cashAfterLand, ltc,
+    saleBase, salePsf, sellingCosts, netSaleProceeds, grossProfit,
+    totalROI, totalROE, investorAnnReturn,
+    totalCapitalIn: myContribution + devContribution,
+    myPayout, devPayout, waterfallSteps, myProfit: myProfitAmt, myTax, myNetAfterTax, myNetCashAtSale,
+    totalMonths, myROI, myAnnReturn, irr, initialEquity, jvNpv, riskFreeRate,
+    totalMortgagePayments, remainingMortgageAtSale, yearlyMortgageCF, irrFlows, mortgagePmt,
+    structure, myPct, devPct,
+    buildingSqft, constructionPsf
+  };
+}
+
+function calcOption3() {
+  updateAutoCalc();
+
+  const base = calcJVProject(null, null, null);
+  const lowPsf = val('s3-sale-low-psf') || val('s3-sale-psf') * 0.9;
+  const highPsf = val('s3-sale-high-psf') || val('s3-sale-psf') * 1.1;
+  const low = calcJVProject(lowPsf, null, null);
+  const high = calcJVProject(highPsf, null, null);
+
+  R.opt3 = base;
+  R.opt3.scenarios = { low, base, high };
+
+  // Update subtotals
+  const stSoft = $('st-soft');
+  if (stSoft) stSoft.textContent = fmt(base.totalSoftCost);
+  const stHard = $('st-hard');
+  if (stHard) stHard.textContent = fmt(base.totalHardCost);
+  const stCarry = $('st-carry');
+  if (stCarry) stCarry.textContent = fmt(base.totalCarryCost);
+  const stFin = $('st-financing');
+  if (stFin) stFin.textContent = fmt(base.totalFinancing);
+
+  const jvRiskFree = base.riskFreeRate;
+  const jvSpread = base.irr - jvRiskFree;
+  const jvTotalYears = base.totalMonths / 12;
+
+  // Results
+  $('res-opt3').innerHTML = `
+    <div style="border:2px solid var(--accent);border-radius:8px;padding:14px 16px;margin-bottom:18px;background:var(--accent-light)">
+      <h4 style="margin:0 0 8px;font-size:14px;color:var(--accent);font-weight:700">IRR — TRUE ANNUALIZED RETURN</h4>
+      <div class="result-grid">
+        <div class="result-item full highlight"><div class="r-label">IRR (Annualized Return, Time-Value Adjusted)</div><div class="r-value ${colorClass(base.irr)}" style="font-size:28px">${fmtPct(base.irr)}</div></div>
+        <div class="result-item"><div class="r-label">Risk-Free Rate (US 10yr Bond)</div><div class="r-value">${fmtPct(jvRiskFree)}</div></div>
+        <div class="result-item"><div class="r-label">Spread (IRR − Risk-Free)</div><div class="r-value ${colorClass(jvSpread)}" style="font-weight:700">${jvSpread >= 0 ? '+' : ''}${(jvSpread * 100).toFixed(1)}%</div></div>
+        <div class="result-item full" style="background:${base.jvNpv >= 0 ? '#ecfdf5' : '#fef2f2'}"><div class="r-label">NPV at Risk-Free Rate <span class="tip" data-tip="If positive: this JV deal beats a ${fmtPct(jvRiskFree)} bond. If negative: you'd be better off selling and buying bonds.">?</span></div><div class="r-value ${colorClass(base.jvNpv)}" style="font-size:20px">${fmt(base.jvNpv)}</div></div>
+      </div>
+      <div style="background:#f0f4ff;border:1px solid #c7d7fe;border-radius:6px;padding:12px 14px;margin-top:10px;font-size:12px;line-height:1.7">
+        <div style="margin-bottom:6px"><strong>Input A — Initial Equity = Sell-Now Net Cash:</strong> <strong>${fmt(base.initialEquity)}</strong><br>
+          <span style="color:var(--muted)">From Option 1: ${fmt(R.opt1.price)} sale − ${fmt(R.opt1.totalCosts)} costs − ${fmt(R.opt1.mortgage)} mortgage. This is what you forgo by doing JV.</span></div>
+        <div style="margin-bottom:6px"><strong>Input B — Mortgage Payments During Construction:</strong> <strong>${fmt(-base.totalMortgagePayments)}</strong> over ${base.totalMonths} months<br>
+          <span style="color:var(--muted)">You keep paying ${fmt(base.mortgagePmt)}/mo while Jeff builds. No rent income, no repair costs. Jeff pays all dev costs.</span></div>
+        <div style="margin-bottom:6px"><strong>Input C — My Net Cash at Sale:</strong> <strong>${fmt(base.myNetCashAtSale)}</strong><br>
+          <span style="color:var(--muted)">Waterfall payout after tax. Mortgage (${fmt(base.remainingMortgageAtSale)} remaining) already paid from sale proceeds before distribution.</span></div>
+        <div style="border-top:1px solid #c7d7fe;padding-top:8px;margin-top:4px"><strong>IRR Cash Flow Series:</strong><br>
+          ${base.irrFlows.map((f, i) => `<span style="color:${f >= 0 ? 'var(--green)' : 'var(--red)'}">${i === 0 ? 'Yr0' : 'Yr'+i}: ${fmt(f)}</span>`).join(' → ')}<br>
+          <span style="color:var(--muted)">Like the rental, you're subsidizing the property during construction (mortgage only, no maintenance). IRR accounts for this opportunity cost.</span></div>
+      </div>
+    </div>
+
+    <div style="border-left:3px solid var(--border);padding-left:14px;margin-bottom:18px">
+      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">MY COSTS & RETURNS</h4>
+      <div class="result-grid">
+        <div class="result-item"><div class="r-label">My Mortgage Payments During Construction (${base.totalMonths} mo × ${fmt(base.mortgagePmt)})</div><div class="r-value negative">${fmt(base.totalMortgagePayments)}</div></div>
+        <div class="result-item"><div class="r-label">Remaining Mortgage Paid at Sale (from proceeds)</div><div class="r-value">${fmt(base.remainingMortgageAtSale)}</div></div>
+        <div class="result-item"><div class="r-label">My Pre-Tax Payout (from waterfall, after debts)</div><div class="r-value">${fmt(base.myPayout)}</div></div>
+        <div class="result-item"><div class="r-label">My Tax on Profit (${val('s3-tax-rate')}%)</div><div class="r-value negative">${fmt(base.myTax)}</div></div>
+        <div class="result-item full highlight"><div class="r-label">My Net Cash at Sale <span class="tip" data-tip="Waterfall payout minus tax. Mortgage already paid from sale proceeds before waterfall distribution.">?</span></div><div class="r-value ${colorClass(base.myNetCashAtSale)}" style="font-size:24px">${fmt(base.myNetCashAtSale)}</div></div>
+        <div class="result-item"><div class="r-label">Incremental vs Sell Now</div><div class="r-value ${colorClass(base.myNetCashAtSale - R.opt1.netCash)}">${fmt(base.myNetCashAtSale - R.opt1.netCash)}</div></div>
+        <div class="result-item"><div class="r-label">Developer Payout</div><div class="r-value">${fmt(base.devPayout)}</div></div>
+        <div class="result-item"><div class="r-label">Timeline</div><div class="r-value">${base.totalMonths} months (${jvTotalYears.toFixed(1)} yrs)</div></div>
+        <div class="result-item full" style="background:#fffbeb;border:1px solid #fde68a"><div class="r-label">Jeff's Simple Annualized Return <span class="tip" data-tip="(Payout ÷ Land Equity)^(12÷months) − 1. This is how Jeff's Excel calculates return — on land equity only, ignoring opportunity cost and mortgage payments. Compare with IRR above.">?</span></div><div class="r-value">${fmtPct(base.myAnnReturn)}</div></div>
+      </div>
+    </div>
+
+    <div style="border-left:3px solid var(--border);padding-left:14px;margin-bottom:18px">
+      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">PROJECT ECONOMICS</h4>
+      <div class="result-grid">
+        <div class="result-item"><div class="r-label">Total Project Cost</div><div class="r-value">${fmt(base.totalProjectCost)}</div></div>
+        <div class="result-item"><div class="r-label">Cash Investment (after loan)</div><div class="r-value">${fmt(base.cashInvest)}</div></div>
+        <div class="result-item"><div class="r-label">LTC Ratio</div><div class="r-value">${fmtPct(base.ltc)}</div></div>
+        <div class="result-item"><div class="r-label">Cash Needed After Land</div><div class="r-value">${fmt(base.cashAfterLand)}</div></div>
+        <div class="result-item"><div class="r-label">Finished Sale Price</div><div class="r-value">${fmt(base.saleBase)}</div></div>
+        <div class="result-item"><div class="r-label">Net Sale Proceeds</div><div class="r-value">${fmt(base.netSaleProceeds)}</div></div>
+        <div class="result-item"><div class="r-label">Gross Project Profit</div><div class="r-value ${colorClass(base.grossProfit)}">${fmt(base.grossProfit)}</div></div>
+        <div class="result-item"><div class="r-label">Project ROI / ROE</div><div class="r-value">${fmtPct(base.totalROI)} / ${fmtPct(base.totalROE)}</div></div>
+      </div>
+    </div>
+
+    <div style="border-left:3px solid #e5e7eb;padding-left:14px;margin-top:24px;opacity:0.8">
+      <h4 style="margin:0 0 10px;font-size:12px;color:#9ca3af;font-weight:600;font-style:italic">CAPITAL STRUCTURE — Who Puts In What</h4>
+      <div class="result-grid">
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">My Land Equity (${fmt(base.landPrice)} land − ${fmt(base.mortgage)} mortgage)</div><div class="r-value">${fmt(base.myContribution)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Developer Cash Equity (${fmt(base.totalDevCost)} dev − ${fmt(base.loanAmount)} loan)</div><div class="r-value">${fmt(base.devContribution)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Existing Mortgage (lien, paid from sale)</div><div class="r-value">${fmt(base.mortgage)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Construction Loan (debt, repaid from sale)</div><div class="r-value">${fmt(base.loanAmount)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Total Equity (my + Jeff's, excl. debts)</div><div class="r-value">${fmt(base.myContribution + base.devContribution)}</div></div>
+      </div>
+    </div>
+  `;
+
+  // Budget summary table
+  $('tbl-budget').innerHTML = `<thead><tr><th>Category</th><th>Amount</th><th>Detail</th></tr></thead><tbody>
+    <tr><td>Land / Property</td><td>${fmt(base.landPrice)}</td><td>Developer valuation</td></tr>
+    <tr><td>Soft Costs (Design/Eng/Permit)</td><td>${fmt(base.totalSoftCost)}</td><td>Architect, structural, civil, survey, arborist, geo, permits</td></tr>
+    <tr><td>Hard Costs (Construction)</td><td>${fmt(base.totalHardCost)}</td><td>${base.buildingSqft.toLocaleString()} sqft × $${base.constructionPsf}/sf + GC + site</td></tr>
+    <tr><td>Carry & Overhead</td><td>${fmt(base.totalCarryCost)}</td><td>Ins, tax, LLC, contingency, WSST − rental</td></tr>
+    <tr><td>  └ Contingency</td><td>${fmt(base.contingency)}</td><td>${val('s3-contingency')}% of cost base</td></tr>
+    <tr><td>  └ WSST</td><td>${fmt(base.wsst)}</td><td>${val('s3-wsst-rate')}% sales tax</td></tr>
+    <tr><td>Financing</td><td>${fmt(base.totalFinancing)}</td><td>$${(base.loanAmount/1000).toFixed(0)}K loan @ ${val('s3-loan-rate')}%, ${val('s3-loan-months')} mo</td></tr>
+    <tr style="font-weight:700;border-top:2px solid var(--text)"><td>Total Project Cost</td><td>${fmt(base.totalProjectCost)}</td><td></td></tr>
+    <tr><td>Construction Loan</td><td>${fmt(base.loanAmount)}</td><td>LTC: ${fmtPct(base.ltc)}</td></tr>
+    <tr style="font-weight:700"><td>Cash Investment Required</td><td>${fmt(base.cashInvest)}</td><td>After loan</td></tr>
+    <tr><td>  └ My Land Equity</td><td>${fmt(base.myContribution)}</td><td>Land − mortgage</td></tr>
+    <tr><td>  └ Jeff's Cash Equity</td><td>${fmt(base.devContribution)}</td><td>Dev costs − loan</td></tr>
+    <tr><td>  └ Existing Mortgage (debt)</td><td>${fmt(base.mortgage)}</td><td>Paid at closing from sale proceeds</td></tr>
+    <tr style="border-top:2px solid var(--accent)"><td><strong>My Out-of-Pocket (Mortgage During Construction)</strong></td><td><strong>${fmt(base.totalMortgagePayments)}</strong></td><td>${base.totalMonths} mo × ${fmt(base.mortgagePmt)}/mo</td></tr>
+    <tr><td>Remaining Mortgage at Sale</td><td>${fmt(base.remainingMortgageAtSale)}</td><td>Deducted from proceeds in waterfall</td></tr>
+  </tbody>`;
+
+  // Waterfall table
+  $('tbl-waterfall').innerHTML = `<thead><tr><th>Step</th><th>My Distribution</th><th>Developer Distribution</th><th>Remaining</th></tr></thead><tbody>` +
+    base.waterfallSteps.map(s => `<tr><td>${s.step}</td><td>${fmt(s.me)}</td><td>${fmt(s.dev)}</td><td>${fmt(s.remaining)}</td></tr>`).join('') +
+    `<tr style="font-weight:700;border-top:2px solid var(--text)"><td>Total</td><td>${fmt(base.myPayout)}</td><td>${fmt(base.devPayout)}</td><td></td></tr></tbody>`;
+
+  // Scenario comparison
+  $('tbl-scenarios').innerHTML = `<thead><tr><th>Metric</th><th>Conservative</th><th>Base</th><th>Optimistic</th></tr></thead><tbody>
+    <tr><td>Sale $/sqft</td><td>$${Math.round(lowPsf)}</td><td>$${Math.round(val('s3-sale-psf'))}</td><td>$${Math.round(highPsf)}</td></tr>
+    <tr><td>Sale Price</td><td>${fmt(low.saleBase)}</td><td>${fmt(base.saleBase)}</td><td>${fmt(high.saleBase)}</td></tr>
+    <tr><td>Net Proceeds</td><td>${fmt(low.netSaleProceeds)}</td><td>${fmt(base.netSaleProceeds)}</td><td>${fmt(high.netSaleProceeds)}</td></tr>
+    <tr><td>Gross Profit</td><td>${fmt(low.grossProfit)}</td><td>${fmt(base.grossProfit)}</td><td>${fmt(high.grossProfit)}</td></tr>
+    <tr><td>Project ROI</td><td>${fmtPct(low.totalROI)}</td><td>${fmtPct(base.totalROI)}</td><td>${fmtPct(high.totalROI)}</td></tr>
+    <tr><td>My Payout (Pre-Tax)</td><td>${fmt(low.myPayout)}</td><td>${fmt(base.myPayout)}</td><td>${fmt(high.myPayout)}</td></tr>
+    <tr><td style="font-weight:700">My Net Cash at Sale</td><td style="font-weight:700">${fmt(low.myNetCashAtSale)}</td><td style="font-weight:700">${fmt(base.myNetCashAtSale)}</td><td style="font-weight:700">${fmt(high.myNetCashAtSale)}</td></tr>
+    <tr><td>Developer Payout</td><td>${fmt(low.devPayout)}</td><td>${fmt(base.devPayout)}</td><td>${fmt(high.devPayout)}</td></tr>
+    <tr><td>My ROI</td><td>${fmtPct(low.myROI)}</td><td>${fmtPct(base.myROI)}</td><td>${fmtPct(high.myROI)}</td></tr>
+    <tr style="font-weight:700"><td>IRR (vs Sell Now)</td><td>${fmtPct(low.irr)}</td><td>${fmtPct(base.irr)}</td><td>${fmtPct(high.irr)}</td></tr>
+    <tr><td>NPV at ${fmtPct(base.riskFreeRate)}</td><td class="${low.jvNpv >= 0 ? '' : 'negative'}">${fmt(low.jvNpv)}</td><td class="${base.jvNpv >= 0 ? '' : 'negative'}">${fmt(base.jvNpv)}</td><td class="${high.jvNpv >= 0 ? '' : 'negative'}">${fmt(high.jvNpv)}</td></tr>
+    <tr><td>Incremental vs Sell Now</td><td>${fmt(low.myNetCashAtSale - R.opt1.netCash)}</td><td>${fmt(base.myNetCashAtSale - R.opt1.netCash)}</td><td>${fmt(high.myNetCashAtSale - R.opt1.netCash)}</td></tr>
+  </tbody>`;
+}
+
+// ============================================================
+//  COMPARISON
+// ============================================================
+function calcComparison() {
+  const o1 = R.opt1;
+  const o2 = R.opt2;
+  const o3 = R.opt3;
+
+  const opt1Cash = o1.netCash || 0;
+  const opt2Cash = o2.totalNetWorth || 0;
+  const opt3Cash = o3.myNetCashAtSale || 0;
+
+  const opt1ROI = o1.netCash && o1.price ? (o1.netCash / (o1.price - o1.netCash)) : 0;
+  const opt2ROI = o2.irr || 0;
+  const opt3ROI = o3.myROI || 0;
+
+  const opt2Ann = o2.irr || 0;
+  const opt3Ann = o3.irr || o3.myAnnReturn || 0;
+
+  const opt2Time = o2.holdYears || 0;
+  const opt3Time = (o3.totalMonths || 0) / 12;
+
+  const rows = [
+    { metric: 'Net Cash / Wealth to Me', v: [opt1Cash, opt2Cash, opt3Cash], format: fmt },
+    { metric: 'Timeframe', v: ['Immediate', opt2Time.toFixed(1)+' yrs', opt3Time.toFixed(1)+' yrs'], format: x => x },
+    { metric: 'Annualized Return (IRR)', v: ['N/A (immediate)', fmtPct(opt2Ann), fmtPct(opt3Ann)], format: x => x },
+    { metric: 'Liquidity', v: ['Immediate', 'Low (locked)', 'None (locked)'], format: x => x },
+    { metric: 'Complexity', v: ['Low', 'Medium', 'High'], format: x => x },
+    { metric: 'Incremental vs Sell Now', v: [fmt(0), fmt(opt2Cash - opt1Cash), fmt(opt3Cash - opt1Cash)], format: x => x },
+  ];
+
+  const tbl = $('tbl-compare');
+  let html = '<thead><tr><th>Metric</th><th>Option 1: Sell Now</th><th>Option 2: Rental</th><th>Option 3: JV Redevelopment</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    let cells = '';
+    if (r.metric === 'Net Cash / Wealth to Me') {
+      const max = Math.max(r.v[0], r.v[1], r.v[2]);
+      const min = Math.min(r.v[0], r.v[1], r.v[2]);
+      for (let i = 0; i < 3; i++) {
+        const cls = r.v[i] === max ? 'best' : r.v[i] === min ? 'worst' : '';
+        cells += `<td class="${cls}">${fmt(r.v[i])}</td>`;
+      }
+    } else {
+      cells = r.v.map(v => `<td>${typeof v === 'number' ? r.format(v) : v}</td>`).join('');
+    }
+    html += `<tr><td>${r.metric}</td>${cells}</tr>`;
+  });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+
+  const cashValues = [
+    { name: 'Sell Now', val: opt1Cash },
+    { name: 'Rental', val: opt2Cash },
+    { name: 'JV Redevelopment', val: opt3Cash }
+  ];
+  const highestCash = cashValues.reduce((a, b) => b.val > a.val ? b : a);
+
+  const annValues = [
+    { name: 'Sell Now', val: 0 },
+    { name: 'Rental', val: opt2Ann },
+    { name: 'JV Redevelopment', val: opt3Ann }
+  ];
+  const highestAnn = annValues.reduce((a, b) => b.val > a.val ? b : a);
+
+  $('rec-grid').innerHTML = `
+    <div class="rec-card green">
+      <div class="rec-title">Highest Net Cash</div>
+      <div class="rec-value">${highestCash.name}</div>
+      <div class="rec-detail">${fmt(highestCash.val)}</div>
+    </div>
+    <div class="rec-card ${highestAnn.val > 0.08 ? 'green' : highestAnn.val > 0 ? 'yellow' : 'red'}">
+      <div class="rec-title">Highest Annualized Return</div>
+      <div class="rec-value">${highestAnn.name}</div>
+      <div class="rec-detail">${fmtPct(highestAnn.val)}</div>
+    </div>
+    <div class="rec-card yellow">
+      <div class="rec-title">Highest Risk</div>
+      <div class="rec-value">JV Redevelopment</div>
+      <div class="rec-detail">Most assumptions, longest timeline</div>
+    </div>
+    <div class="rec-card yellow">
+      <div class="rec-title">Lowest Risk</div>
+      <div class="rec-value">Sell Now</div>
+      <div class="rec-detail">Immediate certainty, no execution risk</div>
+    </div>
+  `;
+
+  drawChart(opt1Cash, opt2Cash, opt3Cash);
+
+  const o3Incremental = opt3Cash - opt1Cash;
+  $('decision-content').innerHTML = `
+    <p><strong>Sell Now is best if…</strong> you need immediate liquidity, want certainty, or believe the market may decline. You lock in ${fmt(opt1Cash)} today with no further risk.</p>
+    <p><strong>Hold as Rental is best if…</strong> you believe in long-term appreciation (${fmtPct(val('s2-appreciation')/100)}/yr), can tolerate ${fmt(o2.annualCF || 0)}/yr cash flow, and want ${fmt(opt2Cash)} total wealth over ${o2.holdYears} years.</p>
+    <p><strong>JV Redevelopment is best if…</strong> the finished sale price exceeds the break-even point, you trust the developer, and the ${fmt(o3Incremental)} incremental upside (base case) justifies ${(o3.totalMonths||0)} months of illiquidity and execution risk.</p>
+  `;
+}
+
+// ============================================================
+//  SVG BAR CHART
+// ============================================================
+function drawChart(v1, v2, v3) {
+  const container = $('chart-container');
+  const maxVal = Math.max(Math.abs(v1), Math.abs(v2), Math.abs(v3), 1);
+  const w = 600, h = 200, pad = 60, barW = 100, gap = 60;
+  const colors = ['#2563eb', '#16a34a', '#8b5cf6'];
+  const labels = ['Sell Now', 'Rental', 'JV Redev'];
+  const values = [v1, v2, v3];
+
+  let bars = '';
+  values.forEach((v, i) => {
+    const x = pad + i * (barW + gap);
+    const barH = Math.abs(v) / maxVal * (h - 50);
+    const y = v >= 0 ? (h - 30 - barH) : (h - 30);
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${colors[i]}" rx="4"/>`;
+    bars += `<text x="${x + barW/2}" y="${y - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${colors[i]}">${fmt(v)}</text>`;
+    bars += `<text x="${x + barW/2}" y="${h - 10}" text-anchor="middle" font-size="11" fill="#6b7280">${labels[i]}</text>`;
+  });
+
+  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="max-width:${w}px">
+    <line x1="${pad-10}" y1="${h-30}" x2="${w}" y2="${h-30}" stroke="#dde1e6" stroke-width="1"/>
+    ${bars}
+  </svg>`;
+}
+
+// ============================================================
+//  RISK ASSESSMENT
+// ============================================================
+const RISK_DIMS = ['Complexity', 'Execution Risk', 'Market Risk', 'Time Risk', 'Liquidity', 'Personal Involvement'];
+const OPTION_NAMES = ['Sell Now', 'Rental', 'JV Redevelopment'];
+const RISK_DEFAULTS = {
+  'Sell Now': [1, 1, 2, 1, 5, 2],
+  'Rental': [2, 2, 3, 3, 2, 3],
+  'JV Redevelopment': [5, 4, 4, 4, 1, 3]
+};
+
+function initRisk() {
+  const grid = $('risk-grid');
+  grid.innerHTML = '';
+  OPTION_NAMES.forEach((opt, oi) => {
+    let rows = RISK_DIMS.map((dim, di) => {
+      const id = `risk-${oi}-${di}`;
+      const def = RISK_DEFAULTS[opt][di];
+      const opts = [1,2,3,4,5].map(v => `<option value="${v}" ${v===def?'selected':''}>${v}</option>`).join('');
+      return `<div class="risk-row"><span>${dim}</span><select id="${id}" onchange="calcRisk()">${opts}</select></div>`;
+    }).join('');
+    grid.innerHTML += `<div class="card risk-card"><h4>${opt}</h4>${rows}<div class="risk-score" id="rscore-${oi}">0</div><div class="risk-label">Avg Risk Score</div></div>`;
+  });
+}
+
+function calcRisk() {
+  const scores = [];
+  OPTION_NAMES.forEach((opt, oi) => {
+    let sum = 0;
+    RISK_DIMS.forEach((_, di) => { sum += parseInt($(`risk-${oi}-${di}`).value) || 3; });
+    const avg = sum / RISK_DIMS.length;
+    scores.push(avg);
+    const el = $(`rscore-${oi}`);
+    el.textContent = avg.toFixed(1);
+    el.style.color = avg <= 2 ? 'var(--green)' : avg <= 3.5 ? 'var(--yellow)' : 'var(--red)';
+  });
+
+  const profits = [R.opt1.netCash || 0, R.opt2.totalNetWorth || 0, R.opt3.myNetAfterTax || 0];
+  const adjusted = profits.map((p, i) => scores[i] > 0 ? p / scores[i] : 0);
+  const maxAdj = Math.max(...adjusted);
+
+  $('risk-adjusted-grid').innerHTML = OPTION_NAMES.map((name, i) => {
+    const isBest = adjusted[i] === maxAdj && maxAdj > 0;
+    return `<div class="result-item ${isBest ? 'highlight' : ''}">
+      <div class="r-label">${name}</div>
+      <div class="r-value">${fmt(adjusted[i])}<span style="font-size:11px;color:var(--muted);margin-left:6px">profit per risk point</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  SENSITIVITY TABLES
+// ============================================================
+function calcSensitivity() {
+  const baseSalePsf = val('s3-sale-psf');
+  const baseConstPsf = val('s3-construction-psf');
+  const baseLoanRate = val('s3-loan-rate');
+  const sellNowNet = R.opt1.netCash || 0;
+  const sqft = val('s3-building-sqft');
+
+  // Sale $/sqft × Construction $/sqft sensitivity
+  const spOffsets = [-100, -50, 0, 50, 100];
+  const ccOffsets = [-50, -25, 0, 25, 50];
+
+  let html1 = '<thead><tr><th>Sale $/sf \\ Const $/sf</th>';
+  ccOffsets.forEach(cc => {
+    const v = baseConstPsf + cc;
+    const label = cc === 0 ? 'Base' : (cc > 0 ? '+' : '') + cc;
+    html1 += `<th>$${v}/sf<br><small>${label}</small></th>`;
+  });
+  html1 += '</tr></thead><tbody>';
+
+  spOffsets.forEach(sp => {
+    const salePsf = baseSalePsf + sp;
+    const label = sp === 0 ? 'Base' : (sp > 0 ? '+' : '') + sp;
+    html1 += `<tr><td>$${salePsf}/sf<br><small>${label}</small></td>`;
+    ccOffsets.forEach(cc => {
+      const constPsf = baseConstPsf + cc;
+      const result = calcJVProject(salePsf, constPsf, null);
+      const myNet = result.myNetAfterTax;
+      const diff = myNet - sellNowNet;
+      const cls = diff > sellNowNet * 0.1 ? 'cell-green' : diff >= -sellNowNet * 0.1 ? 'cell-yellow' : 'cell-red';
+      const isBase = sp === 0 && cc === 0 ? ' cell-base' : '';
+      html1 += `<td class="${cls}${isBase}">${fmt(myNet)}</td>`;
+    });
+    html1 += '</tr>';
+  });
+  html1 += '</tbody>';
+  $('tbl-sens-cost').innerHTML = html1;
+
+  // Sale $/sqft × Loan Rate sensitivity
+  const rateOffsets = [-2, -1, 0, 1, 2];
+
+  let html2 = '<thead><tr><th>Sale $/sf \\ Loan Rate</th>';
+  rateOffsets.forEach(r => {
+    const rate = baseLoanRate + r;
+    const label = r === 0 ? 'Base' : (r > 0 ? '+' : '') + r + '%';
+    html2 += `<th>${rate}%<br><small>${label}</small></th>`;
+  });
+  html2 += '</tr></thead><tbody>';
+
+  spOffsets.forEach(sp => {
+    const salePsf = baseSalePsf + sp;
+    const label = sp === 0 ? 'Base' : (sp > 0 ? '+' : '') + sp;
+    html2 += `<tr><td>$${salePsf}/sf<br><small>${label}</small></td>`;
+    rateOffsets.forEach(r => {
+      const rate = baseLoanRate + r;
+      const result = calcJVProject(salePsf, null, rate);
+      const myNet = result.myNetAfterTax;
+      const diff = myNet - sellNowNet;
+      const cls = diff > sellNowNet * 0.1 ? 'cell-green' : diff >= -sellNowNet * 0.1 ? 'cell-yellow' : 'cell-red';
+      const isBase = sp === 0 && r === 0 ? ' cell-base' : '';
+      html2 += `<td class="${cls}${isBase}">${fmt(myNet)}</td>`;
+    });
+    html2 += '</tr>';
+  });
+  html2 += '</tbody>';
+  $('tbl-sens-time').innerHTML = html2;
+
+  calcBreakEven(sellNowNet, baseSalePsf, baseConstPsf, sqft);
+}
+
+function calcBreakEven(sellNowNet, baseSalePsf, baseConstPsf, sqft) {
+  let beSalePsf = 0;
+  for (let psf = 400; psf <= 1200; psf += 5) {
+    const r = calcJVProject(psf, null, null);
+    if (r.myNetAfterTax >= sellNowNet) { beSalePsf = psf; break; }
+  }
+
+  let beConstPsf = 0;
+  for (let psf = 500; psf >= 50; psf -= 5) {
+    const r = calcJVProject(null, psf, null);
+    if (r.myNetAfterTax >= sellNowNet) { beConstPsf = psf; break; }
+  }
+
+  $('res-breakeven').innerHTML = `
+    <div class="result-item"><div class="r-label">Break-Even Sale $/sqft <span class="tip" data-tip="Minimum $/sqft for JV to match selling now">?</span></div><div class="r-value">$${beSalePsf}/sf (${fmt(beSalePsf * sqft)})</div></div>
+    <div class="result-item"><div class="r-label">Max Construction $/sqft <span class="tip" data-tip="Maximum construction $/sqft for JV to still beat selling now">?</span></div><div class="r-value">$${beConstPsf}/sf (${fmt(beConstPsf * sqft)})</div></div>
+    <div class="result-item"><div class="r-label">Sell Now Baseline</div><div class="r-value">${fmt(sellNowNet)}</div></div>
+    <div class="result-item"><div class="r-label">Current Sale $/sqft</div><div class="r-value">$${baseSalePsf}/sf (${fmt(baseSalePsf * sqft)})</div></div>
+  `;
+}
+
+// ============================================================
+//  TAB NAVIGATION
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  $('sec-' + tab).classList.add('active');
+  const tabs = ['opt1','opt2','opt3','compare','risk','sensitivity','formulas'];
+  const idx = tabs.indexOf(tab);
+  if (idx >= 0) document.querySelectorAll('.nav button')[idx].classList.add('active');
+}
+
+// ============================================================
+//  MODE TOGGLE
+// ============================================================
+function toggleMode() {
+  document.body.classList.toggle('advanced');
+  const isAdv = document.body.classList.contains('advanced');
+  $('modeBtn').textContent = isAdv ? 'Simple Mode' : 'Advanced Mode';
+}
+
+// ============================================================
+//  SCENARIO MANAGEMENT
+// ============================================================
+function getAllInputIds() {
+  return [...document.querySelectorAll('input[id], select[id]')]
+    .filter(el => el.id.startsWith('s1-') || el.id.startsWith('s2-') || el.id.startsWith('s3-') || el.id.startsWith('risk-'))
+    .map(el => el.id);
+}
+
+function captureState() {
+  const state = {};
+  getAllInputIds().forEach(id => {
+    const el = $(id);
+    state[id] = el.value;
+  });
+  return state;
+}
+
+function restoreState(state) {
+  Object.entries(state).forEach(([id, val]) => {
+    const el = $(id);
+    if (el) el.value = val;
+  });
+  recalcAll();
+}
+
+function showSaveModal() { $('modal-save').classList.add('show'); $('save-name').value = ''; $('save-name').focus(); }
+function showLoadModal() {
+  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
+  const list = $('scenario-list');
+  const names = Object.keys(scenarios);
+  if (names.length === 0) {
+    list.innerHTML = '<li style="color:var(--muted)">No saved scenarios</li>';
+  } else {
+    list.innerHTML = names.map(n => `<li><span>${n}</span><div>
+      <button class="btn" onclick="doLoad('${n}')">Load</button>
+      <button class="btn btn-red" onclick="doDelete('${n}')">Delete</button>
+    </div></li>`).join('');
+  }
+  $('modal-load').classList.add('show');
+}
+function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show')); }
+
+function doSave() {
+  const name = $('save-name').value.trim();
+  if (!name) return;
+  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
+  scenarios[name] = captureState();
+  localStorage.setItem('prop-scenarios', JSON.stringify(scenarios));
+  closeModals();
+}
+
+function doLoad(name) {
+  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
+  if (scenarios[name]) restoreState(scenarios[name]);
+  closeModals();
+}
+
+function doDelete(name) {
+  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
+  delete scenarios[name];
+  localStorage.setItem('prop-scenarios', JSON.stringify(scenarios));
+  showLoadModal();
+}
+
+function duplicateScenario() {
+  const state = captureState();
+  const name = 'Scenario_' + new Date().toISOString().slice(0,16).replace('T','_');
+  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
+  scenarios[name] = state;
+  localStorage.setItem('prop-scenarios', JSON.stringify(scenarios));
+  alert('Duplicated as: ' + name);
+}
+
+// ============================================================
+//  PRESET SCENARIOS
+// ============================================================
+function presetScenario(type) {
+  const presets = {
+    conservative: {
+      's1-price-source': 'county', 's1-sale-price': 1200000, 's1-commission': 5.5, 's1-closing-pct': 2, 's1-mortgage': 548005,
+      's1-repair': 5000, 's1-excise': 1.78, 's1-captax': 60000, 's1-other': 8000,
+      's2-rent': 3800, 's2-vacancy': 8, 's2-pm-fee': 10,
+      's2-maintenance': 6000, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
+      's2-utilities': 0, 's2-capex': 5000, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
+      's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 2, 's2-hold-years': 5,
+      's2-expense-growth': 3, 's2-risk-free': 4, 's2-exit-cost': 9,
+      's3-as-is-value': 1100000, 's3-mortgage': 548005, 's3-closing': 12000, 's3-basis': 800000,
+      's3-architect': 18000, 's3-structural': 12000, 's3-civil': 10000, 's3-survey': 12000,
+      's3-arborist': 1500, 's3-geo-soil': 10000, 's3-build-permit': 35000,
+      's3-building-sqft': 4700, 's3-construction-psf': 250,
+      's3-gc-fee': 140000, 's3-sitework': 75000, 's3-additional': 30000, 's3-utility-conn': 18000,
+      's3-insurance-bond': 12000, 's3-utility-tax': 25000, 's3-llc-overhead': 4000,
+      's3-contingency': 5, 's3-wsst-rate': 10.2, 's3-rental-income': 20000,
+      's3-loan-amount': 1500000, 's3-loan-rate': 9.5, 's3-loan-months': 16,
+      's3-sale-psf': 650, 's3-sell-close-pct': 7.5,
+      's3-sale-low-psf': 585, 's3-sale-high-psf': 715,
+      's3-my-pct': 45, 's3-dev-pct': 55, 's3-pref-return': 10,
+      's3-structure': 'equity', 's3-min-payout': 600000,
+      's3-tax-rate': 25, 's3-legal': 12000, 's3-accounting': 6000, 's3-other-txn': 8000
+    },
+    base: {
+      's1-price-source': 'comps', 's1-sale-price': 1275000, 's1-commission': 5, 's1-closing-pct': 1.5, 's1-mortgage': 548005,
+      's1-repair': 0, 's1-excise': 1.78, 's1-captax': 50000, 's1-other': 5000,
+      's2-rent': 4000, 's2-vacancy': 5, 's2-pm-fee': 7,
+      's2-maintenance': 4500, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
+      's2-utilities': 0, 's2-capex': 3000, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
+      's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 3, 's2-hold-years': 5,
+      's2-expense-growth': 2, 's2-risk-free': 4, 's2-exit-cost': 8,
+      's3-as-is-value': 1150000, 's3-mortgage': 548005, 's3-closing': 10000, 's3-basis': 800000,
+      's3-architect': 15000, 's3-structural': 10000, 's3-civil': 8000, 's3-survey': 10000,
+      's3-arborist': 1000, 's3-geo-soil': 8000, 's3-build-permit': 30000,
+      's3-building-sqft': 4700, 's3-construction-psf': 225,
+      's3-gc-fee': 125125, 's3-sitework': 65000, 's3-additional': 25000, 's3-utility-conn': 15000,
+      's3-insurance-bond': 10000, 's3-utility-tax': 22000, 's3-llc-overhead': 3500,
+      's3-contingency': 2, 's3-wsst-rate': 10.2, 's3-rental-income': 30000,
+      's3-loan-amount': 1500000, 's3-loan-rate': 7.5, 's3-loan-months': 14,
+      's3-sale-psf': 723, 's3-sell-close-pct': 7,
+      's3-sale-low-psf': 638, 's3-sale-high-psf': 795,
+      's3-my-pct': 50, 's3-dev-pct': 50, 's3-pref-return': 8,
+      's3-structure': 'equity', 's3-min-payout': 750000,
+      's3-tax-rate': 20, 's3-legal': 10000, 's3-accounting': 5000, 's3-other-txn': 5000
+    },
+    aggressive: {
+      's1-price-source': 'comps', 's1-sale-price': 1350000, 's1-commission': 4.5, 's1-closing-pct': 1.5, 's1-mortgage': 548005,
+      's1-repair': 0, 's1-excise': 1.78, 's1-captax': 40000, 's1-other': 3000,
+      's2-rent': 4200, 's2-vacancy': 3, 's2-pm-fee': 5,
+      's2-maintenance': 3500, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
+      's2-utilities': 0, 's2-capex': 2500, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
+      's2-mortgage-bal': 548005, 's2-appreciation': 5, 's2-rent-growth': 4, 's2-hold-years': 5,
+      's2-expense-growth': 1, 's2-risk-free': 4, 's2-exit-cost': 7,
+      's3-as-is-value': 1200000, 's3-mortgage': 548005, 's3-closing': 8000, 's3-basis': 800000,
+      's3-architect': 15000, 's3-structural': 10000, 's3-civil': 8000, 's3-survey': 10000,
+      's3-arborist': 1000, 's3-geo-soil': 8000, 's3-build-permit': 30000,
+      's3-building-sqft': 4700, 's3-construction-psf': 210,
+      's3-gc-fee': 115000, 's3-sitework': 60000, 's3-additional': 22000, 's3-utility-conn': 14000,
+      's3-insurance-bond': 9000, 's3-utility-tax': 20000, 's3-llc-overhead': 3500,
+      's3-contingency': 2, 's3-wsst-rate': 10.2, 's3-rental-income': 35000,
+      's3-loan-amount': 1500000, 's3-loan-rate': 6.5, 's3-loan-months': 12,
+      's3-sale-psf': 795, 's3-sell-close-pct': 6.5,
+      's3-sale-low-psf': 723, 's3-sale-high-psf': 875,
+      's3-my-pct': 55, 's3-dev-pct': 45, 's3-pref-return': 6,
+      's3-structure': 'equity', 's3-min-payout': 850000,
+      's3-tax-rate': 18, 's3-legal': 8000, 's3-accounting': 4000, 's3-other-txn': 3000
+    }
+  };
+
+  const p = presets[type];
+  if (!p) return;
+  Object.entries(p).forEach(([id, v]) => { const el = $(id); if (el) el.value = v; });
+  recalcAll();
+}
+
+function resetAll() {
+  if (!confirm('Reset all fields to default values?')) return;
+  presetScenario('base');
+}
+
+// ============================================================
+//  CSV EXPORT
+// ============================================================
+function exportCSV() {
+  const o1 = R.opt1, o2 = R.opt2, o3 = R.opt3;
+  const rows = [
+    ['Metric', 'Option 1: Sell Now', 'Option 2: Rental', 'Option 3: JV Redevelopment'],
+    ['Net Cash / Wealth', o1.netCash, o2.totalNetWorth, o3.myNetAfterTax],
+    ['Total Costs', o1.totalCosts, '', o3.totalProjectCost],
+    ['Annualized Return (IRR)', 'N/A', ((o2.irr||0)*100).toFixed(1)+'%', ((o3.irr||o3.myAnnReturn||0)*100).toFixed(1)+'%'],
+    ['Timeline', 'Immediate', o2.holdYears+' years', (o3.totalMonths||0)+' months'],
+    [''],
+    ['Option 1 Detail'],
+    ['Sale Price', o1.price], ['Total Selling Costs', o1.totalCosts], ['Mortgage Payoff', o1.mortgage], ['Net Cash', o1.netCash],
+    [''],
+    ['Option 2 Detail'],
+    ['Annual Cash Flow Yr1', o2.annualCF], ['Total Cash Flow', o2.totalCashFlow],
+    ['Exit Value', o2.exitValue], ['Net Exit Proceeds', o2.netExitProceeds], ['Total Net Wealth', o2.totalNetWorth],
+    [''],
+    ['Option 3 Detail'],
+    ['Land Price', o3.landPrice], ['Total Dev Cost', o3.totalDevCost],
+    ['Total Project Cost', o3.totalProjectCost], ['Cash Invest', o3.cashInvest],
+    ['Finished Sale Price', o3.saleBase], ['Net Proceeds', o3.netSaleProceeds],
+    ['Gross Profit', o3.grossProfit], ['Project ROI', o3.totalROI],
+    ['My Payout Pre-Tax', o3.myPayout], ['My Tax', o3.myTax], ['My Net After Tax', o3.myNetAfterTax],
+    ['Developer Payout', o3.devPayout]
+  ];
+
+  const csv = rows.map(r => r.map(c => typeof c === 'number' ? c.toFixed(0) : (c||'')).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'property-analysis-4333.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  RECALC ALL
+// ============================================================
+function recalcAll() {
+  updateAutoCalc();
+  calcOption1();
+  calcOption2();
+  calcOption3();
+  calcComparison();
+  calcRisk();
+  calcSensitivity();
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initRisk();
+  recalcAll();
+
+  document.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('input', recalcAll);
+    el.addEventListener('change', recalcAll);
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) closeModals(); });
+  });
+});
+</script>
+</body>
+</html>
