@@ -161,6 +161,17 @@ td { font-variant-numeric: tabular-nums; }
   <span style="font-size:11px;color:var(--muted);margin-left:4px">← fills all inputs at once</span>
 </div>
 
+<!-- ==================== GLOBAL TIMELINE BAR ==================== -->
+<div class="scenario-bar no-print" style="background:#ede9fe;border-bottom:1px solid #c4b5fd">
+  <label style="color:#6d28d9">Sell Timeline:</label>
+  <div id="global-timeline" style="display:flex;gap:0;border:1px solid #c4b5fd;border-radius:6px;overflow:hidden">
+    <button class="tl-btn" data-months="12" style="padding:6px 18px;font-size:12px;border:none;cursor:pointer;background:white;color:var(--text)">12 months</button>
+    <button class="tl-btn" data-months="18" style="padding:6px 18px;font-size:12px;border:none;cursor:pointer;background:white;color:var(--text);border-left:1px solid #c4b5fd;border-right:1px solid #c4b5fd">18 months</button>
+    <button class="tl-btn active" data-months="24" style="padding:6px 18px;font-size:12px;border:none;cursor:pointer;background:#7c3aed;color:white;font-weight:600">24 months</button>
+  </div>
+  <span style="font-size:11px;color:#6d28d9;opacity:0.8">Applies to both Rental hold period and JV construction</span>
+</div>
+
 <div class="main">
 
 <!-- ===================== OPTION 1: SELL NOW ===================== -->
@@ -295,7 +306,7 @@ td { font-variant-numeric: tabular-nums; }
         <label>Remaining Mortgage Balance <span class="tip" data-tip="Current principal: $548,005">?</span></label>
         <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s2-mortgage-bal" value="548005" step="1000"></div>
       </div>
-      <h4>Growth & Hold Period</h4>
+      <h4>Growth & Exit</h4>
       <div class="field-row">
         <div class="field">
           <label>Annual Appreciation <span class="tip" data-tip="Expected annual property value growth rate">?</span></label>
@@ -316,15 +327,9 @@ td { font-variant-numeric: tabular-nums; }
           <div class="input-wrap"><input type="number" id="s2-risk-free" value="4.4" step="0.25"><span class="suffix">%</span></div>
         </div>
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Hold Period (Years)</label>
-          <div class="input-wrap"><input type="number" id="s2-hold-years" value="5" step="1"><span class="suffix">yrs</span></div>
-        </div>
-        <div class="field">
-          <label>Exit Selling Cost <span class="tip" data-tip="Commission + closing + excise at sale — typically 7-9%">?</span></label>
-          <div class="input-wrap"><input type="number" id="s2-exit-cost" value="8" step="0.5"><span class="suffix">%</span></div>
-        </div>
+      <div class="field" style="display:none">
+        <label>Exit Selling Cost</label>
+        <div class="input-wrap"><input type="number" id="s2-exit-cost" value="8" step="0.5"><span class="suffix">%</span></div>
       </div>
       <h4>Actual Performance (Reference)</h4>
       <div class="field-row">
@@ -499,8 +504,8 @@ td { font-variant-numeric: tabular-nums; }
           <div class="input-wrap"><input type="number" id="s3-loan-rate" value="7.5" step="0.25"><span class="suffix">%</span></div>
         </div>
       </div>
-      <div class="field">
-        <label>Sell Timeline <span class="tip" data-tip="Project duration in months. Affects mortgage carry, interest, and IRR.">?</span></label>
+      <div class="field" style="display:none">
+        <label>Sell Timeline</label>
         <div class="input-wrap">
           <select id="s3-loan-months" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
             <option value="12">12 months (1 yr)</option>
@@ -549,43 +554,41 @@ td { font-variant-numeric: tabular-nums; }
         </div>
       </div>
       <div class="field">
-        <label>Preferred Return % (Annual) <span class="tip" data-tip="Hurdle rate on invested capital before profit split. 0 = none.">?</span></label>
-        <div class="input-wrap"><input type="number" id="s3-pref-return" value="8" step="0.5"><span class="suffix">%</span></div>
+        <label>Preferred Return % (Annual) <span class="tip" data-tip="Hurdle rate on invested capital before profit split. Jeff's deal does not include this — set to 0. Only add if negotiated.">?</span></label>
+        <div class="input-wrap"><input type="number" id="s3-pref-return" value="0" step="0.5"><span class="suffix">%</span></div>
       </div>
-      <div class="field">
-        <label>Land Contribution Structure <span class="tip" data-tip="How your land value is treated in the JV deal">?</span></label>
+      <div class="field" style="display:none">
+        <label>Land Contribution Structure</label>
         <div class="input-wrap">
           <select id="s3-structure">
-            <option value="equity">Equity Contribution</option>
-            <option value="note">Seller Note</option>
-            <option value="guaranteed">Guaranteed Base + Upside</option>
+            <option value="equity" selected>Equity Contribution</option>
           </select>
         </div>
       </div>
-      <div class="field advanced-field">
-        <label>Minimum Guaranteed Payout to Me <span class="tip" data-tip="Only used with 'Guaranteed Base + Upside' structure">?</span></label>
-        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-min-payout" value="750000" step="10000"></div>
+      <div class="field" style="display:none">
+        <label>Minimum Guaranteed Payout</label>
+        <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-min-payout" value="0" step="10000"></div>
       </div>
 
       <h4>H. Taxes / Fees</h4>
       <div class="field-row">
         <div class="field">
-          <label>Estimated Tax Rate on Profit</label>
+          <label>Estimated Tax Rate on Profit <span class="tip" data-tip="Not in Jeff's spreadsheet — your tax estimate for capital gains on JV profit share.">?</span></label>
           <div class="input-wrap"><input type="number" id="s3-tax-rate" value="20" step="1"><span class="suffix">%</span></div>
         </div>
-        <div class="field advanced-field">
+        <div class="field" style="display:none">
           <label>Legal / Entity Setup</label>
-          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-legal" value="10000" step="1000"></div>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-legal" value="0" step="1000"></div>
         </div>
       </div>
-      <div class="field-row advanced-field">
-        <div class="field advanced-field">
+      <div class="field-row" style="display:none">
+        <div class="field">
           <label>Accounting Cost</label>
-          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-accounting" value="5000" step="500"></div>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-accounting" value="0" step="500"></div>
         </div>
-        <div class="field advanced-field">
+        <div class="field">
           <label>Other Transaction Costs</label>
-          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-other-txn" value="5000" step="500"></div>
+          <div class="input-wrap"><span class="prefix">$</span><input type="number" id="s3-other-txn" value="0" step="500"></div>
         </div>
       </div>
     </div>
@@ -606,16 +609,8 @@ td { font-variant-numeric: tabular-nums; }
 <div class="section" id="sec-compare">
   <div class="card">
     <h3>Wealth Over Time — When Does Each Option Win?</h3>
-    <p style="font-size:12px;color:var(--muted);margin:-4px 0 12px">Shows projected total wealth for each option over time. Sell Now cash compounds at the risk-free rate. Rental builds equity through appreciation and cash flow. JV pays out at construction completion.</p>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-      <label style="font-size:12px;font-weight:600;color:var(--text)">Sell Timeline:</label>
-      <div id="timeline-toggle" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden">
-        <button class="tl-btn" data-months="12" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#f3f4f6;color:var(--text)">12 mo</button>
-        <button class="tl-btn" data-months="18" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#f3f4f6;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border)">18 mo</button>
-        <button class="tl-btn active" data-months="24" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#2563eb;color:white;font-weight:600">24 mo</button>
-      </div>
-      <div id="timeline-impact" style="font-size:12px;color:var(--muted)"></div>
-    </div>
+    <p style="font-size:12px;color:var(--muted);margin:-4px 0 12px">All options compared over the selected sell timeline. Sell Now cash compounds at the risk-free rate or S&P. Rental builds equity through appreciation and cash flow. JV pays out at the sell point.</p>
+    <div id="timeline-impact" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
     <div id="timeline-chart" style="overflow-x:auto"></div>
   </div>
   <div class="decision-box" id="decision-box">
@@ -969,24 +964,23 @@ function calcOption2() {
   const rentGrowth = val('s2-rent-growth') / 100;
   const expenseGrowth = val('s2-expense-growth') / 100;
   const riskFreeRate = val('s2-risk-free') / 100;
-  const holdYears = Math.max(1, Math.round(val('s2-hold-years')));
-  const exitCostPct = val('s2-exit-cost') / 100;
-
+  const holdMonths = Math.max(6, val('s3-loan-months'));
+  const holdYears = holdMonths / 12;
+  const holdYearsForData = Math.ceil(holdYears);
+  // Generate yearly data for table display
   let balance = mortgageBal;
   let monthlyRate = intRate / 12;
   let curRent = rent;
   let curValue = mktVal;
-  let totalCashFlow = 0;
   let yearlyData = [];
 
-  // Year 0 baseline for smooth chart interpolation
   yearlyData.push({
     year: 0, grossRent: 0, effectiveRent: 0, totalExpenses: 0, noi: 0,
     annualMortgage: 0, annualCF: 0, propertyValue: curValue, mortgageBalance: balance, equity: curValue - balance,
     yearInterest: 0, yearPrincipal: 0, rentAmount: curRent
   });
 
-  for (let y = 1; y <= holdYears; y++) {
+  for (let y = 1; y <= holdYearsForData; y++) {
     const expMult = Math.pow(1 + expenseGrowth, y - 1);
     const grossRent = curRent * 12;
     const effectiveRent = grossRent * (1 - vacancy);
@@ -1012,7 +1006,6 @@ function calcOption2() {
     }
 
     const annualCF = noi - annualMortgage;
-    totalCashFlow += annualCF;
     curValue *= (1 + appreciation);
     const equity = curValue - balance;
 
@@ -1025,56 +1018,83 @@ function calcOption2() {
     curRent *= (1 + rentGrowth);
   }
 
-  const exitValue = curValue;
-  const exitCosts = exitValue * exitCostPct;
-  const netExitProceeds = exitValue - exitCosts - balance;
-  const totalNetWorth = totalCashFlow + netExitProceeds;
+  // Precise monthly computation for IRR and exit values
   const sellNowNet = R.opt1.netCash || 0;
   const initialEquity = sellNowNet;
+  const sellNowCostRate = R.opt1.sellCostPct || 0.12;
+  const monthlyIrrFlows = [-initialEquity];
 
-  const totalPrincipalPaydown = mortgageBal - balance;
-  const forwardAppreciation = exitValue - mktVal;
+  let irrBal = mortgageBal;
+  let irrRent = rent;
+  let totalCashFlow = 0;
+  const monthlyRf = Math.pow(1 + riskFreeRate, 1/12) - 1;
 
-  // Compounded cash flow at risk-free rate (FV of all CFs at end of hold)
-  // Skip year-0 baseline entry (index 0)
-  let compoundedCF = 0;
-  for (let i = 1; i <= holdYears; i++) {
-    const d = yearlyData[i];
-    compoundedCF += d.annualCF * Math.pow(1 + riskFreeRate, holdYears - i);
-  }
+  for (let m = 1; m <= holdMonths; m++) {
+    const yrIdx = Math.ceil(m / 12);
+    const expMult = Math.pow(1 + expenseGrowth, yrIdx - 1);
 
-  // IRR — year 0 = initial equity outflow, years 1..N = annual CF, last year includes exit
-  const irrFlows = [-initialEquity];
-  for (let i = 1; i <= holdYears; i++) {
-    const d = yearlyData[i];
-    if (i === holdYears) {
-      irrFlows.push(d.annualCF + netExitProceeds);
+    const effRent = irrRent * (1 - vacancy);
+    const pm = effRent * pmFee;
+    const monthlyExp = pm + (baseMaintenance + basePropTax + baseInsurance + baseUtilities) * expMult / 12 + hoa / 12 + capex / 12;
+    const monthlyCF = effRent - monthlyExp - mortgagePmt;
+    totalCashFlow += monthlyCF;
+
+    if (irrBal > 0) {
+      const mi = irrBal * (intRate / 12);
+      const mp = Math.min(mortgagePmt - mi, irrBal);
+      irrBal = Math.max(0, irrBal - mp);
+    }
+
+    if (m % 12 === 0) irrRent *= (1 + rentGrowth);
+
+    if (m === holdMonths) {
+      const exitPV = mktVal * Math.pow(1 + appreciation, holdMonths / 12);
+      const exitC = exitPV * sellNowCostRate;
+      const netExit = exitPV - exitC - irrBal;
+      monthlyIrrFlows.push(monthlyCF + netExit);
     } else {
-      irrFlows.push(d.annualCF);
+      monthlyIrrFlows.push(monthlyCF);
     }
   }
-  const irr = calcIRR(irrFlows);
+
+  const exitValue = mktVal * Math.pow(1 + appreciation, holdMonths / 12);
+  const exitCosts = exitValue * sellNowCostRate;
+  const exitBalance = irrBal;
+  const netExitProceeds = exitValue - exitCosts - exitBalance;
+  const totalNetWorth = totalCashFlow + netExitProceeds;
+
+  const totalPrincipalPaydown = mortgageBal - exitBalance;
+  const forwardAppreciation = exitValue - mktVal;
+
+  let compoundedCF = 0;
+  for (let m = 1; m <= holdMonths; m++) {
+    const opCF = (m === holdMonths) ? monthlyIrrFlows[m] - netExitProceeds : monthlyIrrFlows[m];
+    compoundedCF += opCF * Math.pow(1 + monthlyRf, holdMonths - m);
+  }
+
+  const monthlyIrr = calcIRR(monthlyIrrFlows, 0.005);
+  const irr = Math.pow(1 + monthlyIrr, 12) - 1;
   const annualizedReturn = irr;
 
-  // NPV at risk-free rate: what the deal is worth vs parking money in bonds
   let npvAtRiskFree = 0;
-  irrFlows.forEach((cf, t) => {
-    npvAtRiskFree += cf / Math.pow(1 + riskFreeRate, t);
+  monthlyIrrFlows.forEach((cf, t) => {
+    npvAtRiskFree += cf / Math.pow(1 + monthlyRf, t);
   });
 
   const yr1 = yearlyData[1] || {};
-  const yrN = yearlyData[holdYears] || {};
+  const holdLabel = holdMonths % 12 === 0 ? (holdYears).toFixed(0) + ' yr' : holdMonths + ' mo';
+  const avgMonthlyCF = totalCashFlow / holdMonths;
   R.opt2 = {
-    monthlyCF: yr1.annualCF / 12, annualCF: yr1.annualCF, totalCashFlow,
-    exitValue, exitCosts, exitCostPct, netExitProceeds, balance, totalNetWorth,
-    initialEquity, irr, annualizedReturn, holdYears, yearlyData
+    monthlyCF: avgMonthlyCF, annualCF: (yr1.annualCF || 0), totalCashFlow,
+    exitValue, exitCosts, sellNowCostRate, netExitProceeds, balance: exitBalance, totalNetWorth,
+    initialEquity, irr, annualizedReturn, holdYears, holdMonths, yearlyData
   };
 
-  const irrFlowLabels = irrFlows.map((f, i) => `<span style="color:${f >= 0 ? 'var(--green)' : 'var(--red)'}">${i === 0 ? 'Yr0' : 'Yr'+i}: ${fmt(f)}</span>`).join(' → ');
+  const irrSummary = `<span style="color:var(--red)">Mo0: ${fmt(-initialEquity)}</span> → <span style="color:var(--muted)">${holdMonths - 1} months of ~${fmt(avgMonthlyCF)}/mo</span> → <span style="color:var(--green)">Mo${holdMonths}: ${fmt(monthlyIrrFlows[holdMonths])}</span>`;
 
   $('res-opt2').innerHTML = `
     <div style="border:2px solid var(--accent);border-radius:8px;padding:14px 16px;margin-bottom:18px;background:var(--accent-light)">
-      <h4 style="margin:0 0 8px;font-size:14px;color:var(--accent);font-weight:700">IRR — TRUE ANNUALIZED RETURN</h4>
+      <h4 style="margin:0 0 8px;font-size:14px;color:var(--accent);font-weight:700">IRR — TRUE ANNUALIZED RETURN (${holdLabel} hold, monthly precision)</h4>
       <div class="result-grid">
         <div class="result-item full highlight"><div class="r-label">IRR (Annualized Return, Time-Value Adjusted)</div><div class="r-value ${colorClass(irr)}" style="font-size:28px">${fmtPct(irr)}</div></div>
         <div class="result-item"><div class="r-label">Risk-Free Rate (US 10yr Bond)</div><div class="r-value">${fmtPct(riskFreeRate)}</div></div>
@@ -1084,30 +1104,30 @@ function calcOption2() {
       <div style="background:#f0f4ff;border:1px solid #c7d7fe;border-radius:6px;padding:12px 14px;margin-top:10px;font-size:12px;line-height:1.7">
         <div style="margin-bottom:6px"><strong>Input A — Initial Equity = Sell-Now Net Cash:</strong> <strong>${fmt(initialEquity)}</strong><br>
           <span style="color:var(--muted)">From Option 1: ${fmt(R.opt1.price)} sale − ${fmt(R.opt1.totalCosts)} costs − ${fmt(R.opt1.mortgage)} mortgage. This is what you forgo by holding.</span></div>
-        <div style="margin-bottom:6px"><strong>Input B — Annual Cash Flows (see below):</strong> Yr1 ${fmt(yr1.annualCF)} → Yr${holdYears} ${fmt(yrN.annualCF)}<br>
+        <div style="margin-bottom:6px"><strong>Input B — Monthly Cash Flows (${holdMonths} months):</strong> ~${fmt(avgMonthlyCF)}/mo<br>
           <span style="color:var(--muted)">Rent grows ${fmtPct(rentGrowth)}/yr, expenses grow ${fmtPct(expenseGrowth)}/yr, mortgage fixed at ${fmt(mortgagePmt)}/mo</span></div>
-        <div style="margin-bottom:6px"><strong>Input C — Net Exit Proceeds (see below):</strong> <strong>${fmt(netExitProceeds)}</strong></div>
-        <div style="border-top:1px solid #c7d7fe;padding-top:8px;margin-top:4px"><strong>IRR Cash Flow Series:</strong><br>${irrFlowLabels}<br>
-          <span style="color:var(--muted)">IRR solves for rate <em>r</em> where NPV = 0. IRR itself doesn't change with risk-free rate — but the <strong>Spread</strong> and <strong>NPV</strong> above do. NPV discounts these cash flows at ${fmtPct(riskFreeRate)}: if positive, holding beats bonds.</span></div>
+        <div style="margin-bottom:6px"><strong>Input C — Net Exit Proceeds (month ${holdMonths}):</strong> <strong>${fmt(netExitProceeds)}</strong></div>
+        <div style="border-top:1px solid #c7d7fe;padding-top:8px;margin-top:4px"><strong>IRR Cash Flow Series (monthly precision):</strong><br>${irrSummary}<br>
+          <span style="color:var(--muted)">IRR computed with ${holdMonths + 1} monthly flows, then annualized. NPV discounts at ${fmtPct(riskFreeRate)}: if positive, holding beats bonds.</span></div>
       </div>
     </div>
 
     <div style="border-left:3px solid var(--border);padding-left:14px;margin-bottom:18px">
-      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">ANNUAL CASH FLOW</h4>
+      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">CASH FLOW (${holdLabel})</h4>
       <div class="result-grid">
-        <div class="result-item"><div class="r-label">Yr 1 Monthly Net Cash Flow</div><div class="r-value ${colorClass(yr1.annualCF/12)}">${fmt(yr1.annualCF/12)}</div></div>
+        <div class="result-item"><div class="r-label">Monthly Net Cash Flow (avg)</div><div class="r-value ${colorClass(avgMonthlyCF)}">${fmt(avgMonthlyCF)}</div></div>
         <div class="result-item"><div class="r-label">Yr 1 Annual Net Cash Flow</div><div class="r-value ${colorClass(yr1.annualCF)}">${fmt(yr1.annualCF)}</div></div>
-        <div class="result-item"><div class="r-label">Total Cash Flow (simple sum, ${holdYears} yrs)</div><div class="r-value ${colorClass(totalCashFlow)}">${fmt(totalCashFlow)}</div></div>
-        <div class="result-item"><div class="r-label">Total Cash Flow (compounded at ${fmtPct(riskFreeRate)} risk-free) <span class="tip" data-tip="Each year's negative CF compounded forward at the risk-free rate to year ${holdYears}. Shows the true opportunity cost of subsidizing this property.">?</span></div><div class="r-value ${colorClass(compoundedCF)}">${fmt(compoundedCF)}</div></div>
+        <div class="result-item"><div class="r-label">Total Cash Flow (simple sum, ${holdLabel})</div><div class="r-value ${colorClass(totalCashFlow)}">${fmt(totalCashFlow)}</div></div>
+        <div class="result-item"><div class="r-label">Total Cash Flow (compounded at ${fmtPct(riskFreeRate)} risk-free) <span class="tip" data-tip="Monthly CFs compounded forward at risk-free rate to month ${holdMonths}. Shows true opportunity cost.">?</span></div><div class="r-value ${colorClass(compoundedCF)}">${fmt(compoundedCF)}</div></div>
       </div>
     </div>
 
     <div style="border-left:3px solid var(--border);padding-left:14px;margin-bottom:18px">
-      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">EXIT ANALYSIS (YEAR ${holdYears})</h4>
+      <h4 style="margin:0 0 10px;font-size:13px;color:var(--text);font-weight:600">EXIT ANALYSIS (MONTH ${holdMonths})</h4>
       <div class="result-grid">
-        <div class="result-item full"><div class="r-label">Property Value at Exit (${fmtPct(appreciation)}/yr × ${holdYears} yrs)</div><div class="r-value">${fmt(exitValue)}</div></div>
-        <div class="result-item"><div class="r-label">(−) Exit Selling Costs (${val('s2-exit-cost')}%)</div><div class="r-value negative">${fmt(exitCosts)}</div></div>
-        <div class="result-item"><div class="r-label">(−) Remaining Mortgage</div><div class="r-value">${fmt(balance)}</div></div>
+        <div class="result-item full"><div class="r-label">Property Value at Exit (${fmtPct(appreciation)}/yr × ${holdLabel})</div><div class="r-value">${fmt(exitValue)}</div></div>
+        <div class="result-item"><div class="r-label">(−) Exit Selling Costs (${(sellNowCostRate * 100).toFixed(1)}% — matches sell-now) <span class="tip" data-tip="Uses the same effective cost rate as Option 1 (commission + closing + excise + capital gains + other) for apples-to-apples IRR comparison. Sell-now effective rate: ${(sellNowCostRate * 100).toFixed(1)}%.">?</span></div><div class="r-value negative">${fmt(exitCosts)}</div></div>
+        <div class="result-item"><div class="r-label">(−) Remaining Mortgage</div><div class="r-value">${fmt(exitBalance)}</div></div>
         <div class="result-item full highlight"><div class="r-label">= Net Exit Proceeds</div><div class="r-value ${colorClass(netExitProceeds)}" style="font-size:20px">${fmt(netExitProceeds)}</div></div>
       </div>
     </div>
@@ -1116,7 +1136,7 @@ function calcOption2() {
       <h4 style="margin:0 0 10px;font-size:12px;color:#9ca3af;font-weight:600;font-style:italic">WEALTH BREAKDOWN — Return Decomposition</h4>
       <div class="result-grid">
         <div class="result-item" style="background:#f5f5f5"><div class="r-label">Forward Appreciation (${fmtPct(appreciation)}/yr)</div><div class="r-value ${colorClass(forwardAppreciation)}">${fmt(forwardAppreciation)}</div></div>
-        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Principal Paydown (${holdYears} yrs)</div><div class="r-value ${colorClass(totalPrincipalPaydown)}">${fmt(totalPrincipalPaydown)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Principal Paydown (${holdLabel})</div><div class="r-value ${colorClass(totalPrincipalPaydown)}">${fmt(totalPrincipalPaydown)}</div></div>
         <div class="result-item" style="background:#f5f5f5"><div class="r-label">Cumulative Cash Flow</div><div class="r-value ${colorClass(totalCashFlow)}">${fmt(totalCashFlow)}</div></div>
         <div class="result-item" style="background:#f5f5f5"><div class="r-label">Exit Selling Costs</div><div class="r-value ${colorClass(-exitCosts)}">${fmt(-exitCosts)}</div></div>
       </div>
@@ -1459,7 +1479,10 @@ function calcOption3() {
           <span style="color:var(--red)">Mo 0: ${fmt(-base.initialEquity)}</span> →
           <span style="color:var(--red)">Mo 1–${base.totalMonths - 1}: ${fmt(-base.mortgagePmt)}/mo</span> →
           <span style="color:${(-base.mortgagePmt + base.myNetCashAtSale) >= 0 ? 'var(--green)' : 'var(--red)'}">Mo ${base.totalMonths}: ${fmt(-base.mortgagePmt + base.myNetCashAtSale)}</span><br>
-          <span style="color:var(--muted)">IRR computed on ${base.totalMonths + 1} monthly cash flows, then annualized: (1 + monthly_rate)¹² − 1. This correctly reflects the ${base.totalMonths}-month timeline, not rounded to 2 years.</span></div>
+          <span style="color:var(--muted)">IRR computed on ${base.totalMonths + 1} monthly cash flows, then annualized: (1 + monthly_rate)¹² − 1.</span></div>
+        <div style="border-top:1px solid #c7d7fe;padding-top:8px;margin-top:4px;color:var(--muted);font-style:italic">
+          ⚡ <strong>Why shorter timelines have higher IRR:</strong> The sale price is the same regardless of timeline, but carrying costs (loan interest: ${(val('s3-loan-rate'))}%/yr on $${(val('s3-loan-amt')/1e6).toFixed(1)}M = ~${fmt(val('s3-loan-amt') * val('s3-loan-rate') / 100 / 12)}/mo, plus your mortgage: ${fmt(base.mortgagePmt)}/mo) add up fast. At 12 mo you pay ~${fmt(val('s3-loan-amt') * val('s3-loan-rate') / 100 / 12 * 12 + base.mortgagePmt * 12)} in carry; at 24 mo, double that.
+        </div>
       </div>
     </div>
 
@@ -1560,48 +1583,45 @@ function calcComparison() {
   const opt3Ann = o3.irr || 0;
 
   const opt2Time = o2.holdYears || 0;
+  const holdLabel = o2.holdMonths ? (o2.holdMonths % 12 === 0 ? opt2Time.toFixed(0) + ' yr' : o2.holdMonths + ' mo') : opt2Time.toFixed(0) + ' yr';
 
   drawTimelineChart(o1, o2, o3);
 
-  // Timeline impact: compute JV at 12, 18, 24 months for quick comparison
+  // Timeline impact: compute all options at 12, 18, 24 months for comparison
   const currentMonths = val('s3-loan-months');
   const timelineOptions = [12, 18, 24];
   const origVal = $('s3-loan-months').value;
   const tlResults = timelineOptions.map(mo => {
     $('s3-loan-months').value = mo;
-    const r = calcJVProject(null, null, null);
-    return { months: mo, irr: r.irr || 0, netCash: r.myNetCashAtSale || 0, mortgageCost: r.totalMortgagePayments || 0, interest: r.interestCarry || 0 };
+    const jvR = calcJVProject(null, null, null);
+    return { months: mo, jvIrr: jvR.irr || 0, jvNetCash: jvR.myNetCashAtSale || 0, mortgageCost: jvR.totalMortgagePayments || 0, interest: jvR.interestCarry || 0 };
   });
   $('s3-loan-months').value = origVal;
 
   const tlEl = $('timeline-impact');
   if (tlEl) {
-    tlEl.innerHTML = `<table style="font-size:11px;border-collapse:collapse;margin-top:4px">
+    tlEl.innerHTML = `<table style="font-size:11px;border-collapse:collapse">
       <tr style="border-bottom:1px solid var(--border)">
         <th style="padding:3px 8px;text-align:left"></th>
         ${tlResults.map(r => {
           const isCurrent = r.months === currentMonths;
-          return `<th style="padding:3px 8px;text-align:center;${isCurrent ? 'background:#ede9fe;border-radius:4px' : ''}">${r.months} mo</th>`;
+          return `<th style="padding:3px 8px;text-align:center;${isCurrent ? 'background:#ede9fe;border-radius:4px;font-weight:700' : ''}">${r.months} mo${isCurrent ? ' ←' : ''}</th>`;
         }).join('')}
       </tr>
       <tr>
-        <td style="padding:2px 8px;color:var(--muted)">My Net Cash</td>
-        ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;font-weight:600">${fmt(r.netCash)}</td>`).join('')}
+        <td style="padding:2px 8px;color:var(--muted)">JV Net Cash</td>
+        ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;font-weight:600">${fmt(r.jvNetCash)}</td>`).join('')}
       </tr>
       <tr>
-        <td style="padding:2px 8px;color:var(--muted)">IRR</td>
+        <td style="padding:2px 8px;color:var(--muted)">JV IRR</td>
         ${tlResults.map(r => {
-          const color = r.irr >= 0.11 ? 'var(--green)' : r.irr > 0 ? '#d97706' : 'var(--red)';
-          return `<td style="padding:2px 8px;text-align:center;font-weight:700;color:${color}">${fmtPct(r.irr)}</td>`;
+          const color = r.jvIrr >= 0.11 ? 'var(--green)' : r.jvIrr > 0 ? '#d97706' : 'var(--red)';
+          return `<td style="padding:2px 8px;text-align:center;font-weight:700;color:${color}">${fmtPct(r.jvIrr)}</td>`;
         }).join('')}
       </tr>
       <tr>
         <td style="padding:2px 8px;color:var(--muted)">Mortgage Carry</td>
         ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;color:var(--red)">${fmt(r.mortgageCost)}</td>`).join('')}
-      </tr>
-      <tr>
-        <td style="padding:2px 8px;color:var(--muted)">Loan Interest</td>
-        ${tlResults.map(r => `<td style="padding:2px 8px;text-align:center;color:var(--red)">${fmt(r.interest)}</td>`).join('')}
       </tr>
     </table>`;
   }
@@ -1612,10 +1632,9 @@ function calcComparison() {
   const riskFree = (val('s2-risk-free') || 4) / 100;
 
   const spReturn = 0.11;
-  const sellNowAtRental = opt1Cash * Math.pow(1 + riskFree, opt2Time);
-  const spAtRental = opt1Cash * Math.pow(1 + spReturn, opt2Time);
-  const spAtJV = opt1Cash * Math.pow(1 + spReturn, jvYear);
-  const rentalBeatsSP = opt2Cash > spAtRental;
+  const sellNowAtEnd = opt1Cash * Math.pow(1 + riskFree, opt2Time);
+  const spAtEnd = opt1Cash * Math.pow(1 + spReturn, opt2Time);
+  const rentalBeatsSP = opt2Cash > spAtEnd;
 
   const jvLowPsf = val('s3-sale-low-psf') || 638;
   const jvHighPsf = val('s3-sale-high-psf') || 920;
@@ -1623,9 +1642,9 @@ function calcComparison() {
   const jvHigh = calcJVProject(jvHighPsf, null, null);
 
   $('decision-content').innerHTML = `
-    <p><strong>Sell Now + Invest</strong>: ${fmt(opt1Cash)} today → ${fmt(sellNowAtRental)} at risk-free (${fmtPct(riskFree)}) or ${fmt(spAtRental)} in S&P 500 (11%) over ${opt2Time.toFixed(0)} years.</p>
-    <p><strong>Keep as Rental</strong>: builds to ${fmt(opt2Cash)} over ${opt2Time.toFixed(0)} years (IRR ${fmtPct(opt2Ann)}). ${rentalBeatsSP ? 'Beats even S&P 500 returns.' : `Trails S&P 500 by ${fmt(spAtRental - opt2Cash)}.`}</p>
-    <p><strong>JV Redevelopment</strong>: range ${fmt(jvLow.myNetCashAtSale)} ($${jvLowPsf}/sf) to ${fmt(jvHigh.myNetCashAtSale)} ($${jvHighPsf}/sf) at month ${jvMonth}. Base case (${fmt(opt3Cash)}) IRR ${fmtPct(opt3Ann)}. S&P benchmark at that point: ${fmt(spAtJV)}.</p>
+    <p><strong>Sell Now + Invest (${holdLabel})</strong>: ${fmt(opt1Cash)} today → ${fmt(sellNowAtEnd)} at risk-free (${fmtPct(riskFree)}) or ${fmt(spAtEnd)} in S&P 500 (11%).</p>
+    <p><strong>Keep as Rental (${holdLabel})</strong>: builds to ${fmt(opt2Cash)} (IRR ${fmtPct(opt2Ann)}). ${rentalBeatsSP ? 'Beats even S&P 500 returns.' : `Trails S&P 500 by ${fmt(spAtEnd - opt2Cash)}.`}</p>
+    <p><strong>JV Redevelopment (${holdLabel})</strong>: range ${fmt(jvLow.myNetCashAtSale)} ($${jvLowPsf}/sf) to ${fmt(jvHigh.myNetCashAtSale)} ($${jvHighPsf}/sf). Base case (${fmt(opt3Cash)}) IRR ${fmtPct(opt3Ann)}. S&P benchmark: ${fmt(spAtEnd)}.</p>
   `;
 }
 
@@ -1636,12 +1655,13 @@ function drawTimelineChart(o1, o2, o3) {
   const container = $('timeline-chart');
   const riskFree = (val('s2-risk-free') || 4) / 100;
   const spReturn = 0.11;
-  const holdYears = o2.holdYears || 5;
+  const holdMonths = o2.holdMonths || val('s3-loan-months') || 24;
+  const holdYears = holdMonths / 12;
   const jvMonths = o3.totalMonths || 24;
   const jvYear = jvMonths / 12;
-  const maxYears = Math.max(holdYears, Math.ceil(jvYear) + 1);
+  const maxYears = holdYears;
   const sellNowCash = o1.netCash || 0;
-  const exitCostPct = o2.exitCostPct || 0.08;
+  const sellNowCostRate = o1.sellCostPct || 0.12;
 
   const jvLowPsf = val('s3-sale-low-psf') || 638;
   const jvHighPsf = val('s3-sale-high-psf') || 920;
@@ -1652,19 +1672,11 @@ function drawTimelineChart(o1, o2, o3) {
   const jvHighCash = jvHigh.myNetCashAtSale || 0;
   const jvBaseCash = o3.myNetCashAtSale || 0;
 
-  const jvTickPsfs = [600, 650, 700, 750, 800, 850, 900].filter(p => p > jvLowPsf && p < jvHighPsf);
-  const jvTickResults = jvTickPsfs.map(psf => {
-    const r = calcJVProject(psf, null, null);
-    return { psf, cash: r.myNetCashAtSale || 0, irr: r.irr || 0, salePrice: psf * sqft };
-  });
   const jvBaseResult = { psf: val('s3-sale-psf'), cash: jvBaseCash, irr: o3.irr || 0, salePrice: val('s3-sale-psf') * sqft };
 
   const steps = maxYears * 6;
   const sellNowLine = [], spLine = [], rentalLine = [];
   const jvLowLine = [], jvHighLine = [], jvBaseLine = [];
-  const jvTickLines = jvTickResults.map(() => []);
-
-  rentalLine.push({ t: 0, v: sellNowCash });
 
   for (let i = 0; i <= steps; i++) {
     const t = (i / steps) * maxYears;
@@ -1672,15 +1684,14 @@ function drawTimelineChart(o1, o2, o3) {
     sellNowLine.push({ t, v: sellNowCash * Math.pow(1 + riskFree, t) });
     spLine.push({ t, v: sellNowCash * Math.pow(1 + spReturn, t) });
 
-    if (t > 0 && t <= holdYears && o2.yearlyData && o2.yearlyData.length > 0) {
+    if (t <= holdYears && o2.yearlyData && o2.yearlyData.length > 0) {
       const yr = Math.min(Math.floor(t), o2.yearlyData.length - 1);
       const frac = t - Math.floor(t);
       const d = o2.yearlyData[yr];
       const dNext = (yr + 1) < o2.yearlyData.length ? o2.yearlyData[yr + 1] : d;
       const propVal = d.propertyValue + (dNext.propertyValue - d.propertyValue) * frac;
       const mortBal = d.mortgageBalance + (dNext.mortgageBalance - d.mortgageBalance) * frac;
-      const netIfSold = propVal * (1 - exitCostPct) - mortBal;
-      // Cumulative CF: sum completed years (1..yr) + fraction of next year
+      const netIfSold = propVal * (1 - sellNowCostRate) - mortBal;
       let cumCF = 0;
       for (let y = 1; y <= yr; y++) cumCF += o2.yearlyData[y].annualCF;
       if (frac > 0 && (yr + 1) < o2.yearlyData.length) cumCF += o2.yearlyData[yr + 1].annualCF * frac;
@@ -1688,17 +1699,15 @@ function drawTimelineChart(o1, o2, o3) {
     }
 
     const mortPmt = o3.mortgagePmt || 0;
-    const allJvSets = [
+    [
       { line: jvLowLine, cash: jvLowCash },
       { line: jvHighLine, cash: jvHighCash },
       { line: jvBaseLine, cash: jvBaseCash },
-      ...jvTickResults.map((tr, idx) => ({ line: jvTickLines[idx], cash: tr.cash }))
-    ];
-    allJvSets.forEach(({ line, cash }) => {
-      if (t <= jvYear) {
+    ].forEach(({ line, cash }) => {
+      if (t < jvYear - 0.01) {
         line.push({ t, v: sellNowCash - mortPmt * t * 12 });
       } else {
-        line.push({ t, v: cash * Math.pow(1 + riskFree, t - jvYear) });
+        line.push({ t, v: cash });
       }
     });
   }
@@ -1708,8 +1717,8 @@ function drawTimelineChart(o1, o2, o3) {
   const maxVal = Math.max(...allVals) * 1.05;
   const valRange = maxVal - minVal || 1;
 
-  // Full-width responsive chart
-  const w = 1100, h = 420, padL = 70, padR = 220, padT = 30, padB = 40;
+  // Full-width responsive chart — legend below, not right
+  const w = 900, h = 320, padL = 70, padR = 30, padT = 30, padB = 40;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -1733,148 +1742,78 @@ function drawTimelineChart(o1, o2, o3) {
     gridLines += `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>`;
     gridLines += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${fmtK(v)}</text>`;
   }
-  for (let yr = 0; yr <= maxYears; yr++) {
+  const xTickStep = maxYears <= 1.5 ? 0.25 : maxYears <= 2 ? 0.5 : 1;
+  for (let yr = 0; yr <= maxYears + 0.01; yr += xTickStep) {
     const x = tx(yr);
     gridLines += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${h - padB}" stroke="#e5e7eb" stroke-width="0.5"/>`;
-    gridLines += `<text x="${x}" y="${h - padB + 16}" text-anchor="middle" font-size="10" fill="#9ca3af">Yr ${yr}</text>`;
+    const label = yr % 1 === 0 ? `Yr ${yr}` : `${(yr * 12).toFixed(0)}mo`;
+    gridLines += `<text x="${x}" y="${h - padB + 16}" text-anchor="middle" font-size="10" fill="#9ca3af">${label}</text>`;
   }
 
   const startDot = `<circle cx="${tx(0)}" cy="${ty(sellNowCash)}" r="4" fill="#374151" stroke="white" stroke-width="2"/>
     <text x="${tx(0) + 8}" y="${ty(sellNowCash) - 8}" font-size="10" fill="#374151" font-weight="700">${fmtK(sellNowCash)}</text>`;
 
-  const jvX = tx(jvYear);
-
-  const jvSaleBand = `<rect x="${jvX - 3}" y="${padT}" width="6" height="${plotH}" fill="#8b5cf6" opacity="0.06"/>
-    <line x1="${jvX}" y1="${padT}" x2="${jvX}" y2="${h - padB}" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <text x="${jvX}" y="${padT - 8}" text-anchor="middle" font-size="10" fill="#8b5cf6" font-weight="600">JV Sale — Yr ${(jvMonths / 12).toFixed(1)}</text>`;
-
-  // Benchmark dots at JV sale line
-  const rfAtJV = sellNowCash * Math.pow(1 + riskFree, jvYear);
-  const spAtJV = sellNowCash * Math.pow(1 + spReturn, jvYear);
-  let benchmarkDots = '';
-  benchmarkDots += `<circle cx="${jvX}" cy="${ty(rfAtJV)}" r="3" fill="#2563eb" stroke="white" stroke-width="1.5"/>`;
-  benchmarkDots += `<circle cx="${jvX}" cy="${ty(spAtJV)}" r="3" fill="#f59e0b" stroke="white" stroke-width="1.5"/>`;
-
-  // Scenario scatter at JV sale line (only base + bounds, less clutter)
-  const allScenarios = [
-    { psf: jvLowPsf, cash: jvLowCash, irr: jvLow.irr || 0, salePrice: jvLowPsf * sqft, type: 'bound' },
-    ...jvTickResults.map(tr => ({ ...tr, type: 'tick' })),
-    { ...jvBaseResult, type: 'base' },
-    { psf: jvHighPsf, cash: jvHighCash, irr: jvHigh.irr || 0, salePrice: jvHighPsf * sqft, type: 'bound' },
-  ].sort((a, b) => a.cash - b.cash);
-
-  const seenPsf = new Set();
-  const uniqueScenarios = allScenarios.filter(s => {
-    if (seenPsf.has(s.psf)) return false;
-    seenPsf.add(s.psf);
-    return true;
-  });
-
-  let scenarioDots = '';
-  const scenarioLabels = uniqueScenarios.map(s => ({
-    y: ty(s.cash), origY: ty(s.cash),
-    psf: s.psf, cash: s.cash, irr: s.irr, salePrice: s.salePrice,
-    isBase: s.type === 'base', isBound: s.type === 'bound'
-  }));
-  scenarioLabels.sort((a, b) => a.y - b.y);
-  for (let i = 1; i < scenarioLabels.length; i++) {
-    if (scenarioLabels[i].y - scenarioLabels[i-1].y < 13) scenarioLabels[i].y = scenarioLabels[i-1].y + 13;
-  }
-
-  scenarioLabels.forEach(s => {
-    const r = s.isBase ? 4.5 : s.isBound ? 3 : 2;
-    const fill = s.isBase ? '#7c3aed' : '#8b5cf6';
-    const strokeW = s.isBase ? 2 : 1;
-    scenarioDots += `<circle cx="${jvX}" cy="${s.origY}" r="${r}" fill="${fill}" stroke="white" stroke-width="${strokeW}"/>`;
-    if (Math.abs(s.y - s.origY) > 2) {
-      scenarioDots += `<line x1="${jvX + 4}" y1="${s.origY}" x2="${jvX + 10}" y2="${s.y}" stroke="#8b5cf6" stroke-width="0.5" opacity="0.4"/>`;
-    }
-    const irrStr = (s.irr * 100).toFixed(1);
-    const fw = s.isBase ? '700' : '400';
-    const fs = s.isBase ? '9' : '7.5';
-    const op = s.isBase ? '1' : '0.7';
-    scenarioDots += `<text x="${jvX + 12}" y="${s.y + 3}" font-size="${fs}" fill="#7c3aed" font-weight="${fw}" opacity="${op}">$${s.psf}/sf ${fmtK(s.cash)} (${irrStr}%)</text>`;
-  });
-
-  // Right-edge legend — single line per entry: connector + "label value"
+  // Endpoint values for legend table
   const sellEnd = sellNowLine[sellNowLine.length - 1];
   const spEnd = spLine[spLine.length - 1];
-  const rentEnd = rentalLine[rentalLine.length - 1];
+  const rentEnd = rentalLine.length > 0 ? rentalLine[rentalLine.length - 1] : { v: 0 };
+  const jvBaseEnd = jvBaseLine[jvBaseLine.length - 1];
   const jvHighEnd = jvHighLine[jvHighLine.length - 1];
   const jvLowEnd = jvLowLine[jvLowLine.length - 1];
-  const jvBaseEnd = jvBaseLine[jvBaseLine.length - 1];
 
-  const rx = w - padR + 8;
-  const rightLegend = [
-    { y: ty(spEnd.v), color: '#f59e0b', text: `S&P 11% — ${fmtK(spEnd.v)}`, dash: '4,2' },
-    { y: ty(rentEnd.v), color: '#16a34a', text: `Rental — ${fmtK(rentEnd.v)}` },
-    { y: ty(sellEnd.v), color: '#2563eb', text: `Risk-Free ${fmtPct(riskFree)} — ${fmtK(sellEnd.v)}` },
-    { y: ty(jvBaseEnd.v), color: '#7c3aed', text: `JV $${jvBaseResult.psf}/sf — ${fmtK(jvBaseEnd.v)}`, bold: true },
-    { y: ty(jvHighEnd.v), color: '#8b5cf6', text: `JV high $${jvHighPsf}/sf — ${fmtK(jvHighEnd.v)}`, opacity: 0.5 },
-    { y: ty(jvLowEnd.v), color: '#8b5cf6', text: `JV low $${jvLowPsf}/sf — ${fmtK(jvLowEnd.v)}`, opacity: 0.5 },
+  // Endpoint dots on the chart
+  let endDots = '';
+  const endPoints = [
+    { v: sellEnd.v, color: '#2563eb' },
+    { v: spEnd.v, color: '#f59e0b' },
+    { v: rentEnd.v, color: '#16a34a' },
+    { v: jvBaseEnd.v, color: '#7c3aed' },
   ];
-  rightLegend.sort((a, b) => a.y - b.y);
-  for (let i = 1; i < rightLegend.length; i++) {
-    if (rightLegend[i].y - rightLegend[i-1].y < 14) rightLegend[i].y = rightLegend[i-1].y + 14;
-  }
-  let endLabels = '';
-  rightLegend.forEach(item => {
-    const op = item.opacity || 1;
-    const fw = item.bold ? '700' : '500';
-    const fs = item.bold ? '10' : '9';
-    endLabels += `<line x1="${w - padR - 4}" y1="${item.y}" x2="${rx - 3}" y2="${item.y}" stroke="${item.color}" stroke-width="1.5" opacity="${op}"${item.dash ? ` stroke-dasharray="${item.dash}"` : ''}/>`;
-    endLabels += `<text x="${rx}" y="${item.y + 3.5}" font-size="${fs}" fill="${item.color}" opacity="${op}" font-weight="${fw}">${item.text}</text>`;
+  endPoints.forEach(ep => {
+    if (isNaN(ep.v)) return;
+    const cx = tx(maxYears), cy = ty(ep.v);
+    endDots += `<circle cx="${cx}" cy="${cy}" r="4" fill="${ep.color}" stroke="white" stroke-width="2"/>`;
+    endDots += `<text x="${cx + 8}" y="${cy + 4}" font-size="9" fill="${ep.color}" font-weight="600">${fmtK(ep.v)}</text>`;
   });
 
-  // Subtle tick lines inside JV band
-  let jvTickSvg = '';
-  jvTickResults.forEach((tr, idx) => {
-    jvTickSvg += `<path d="${pathD(jvTickLines[idx])}" fill="none" stroke="#8b5cf6" stroke-width="0.6" opacity="0.25" stroke-dasharray="2,4"/>`;
-  });
-
-  // Year-marker dots: find value at each integer year for key lines
-  function valAtYear(line, year) {
-    let best = null;
-    for (const p of line) {
-      if (best === null || Math.abs(p.t - year) < Math.abs(best.t - year)) best = p;
-    }
-    return best;
-  }
-  let yearDots = '';
-  const dotLines = [
-    { line: sellNowLine, color: '#2563eb', label: 'RF', above: true },
-    { line: spLine, color: '#f59e0b', label: 'SP', above: true },
-    { line: rentalLine, color: '#16a34a', label: 'Rent', above: false },
-    { line: jvBaseLine, color: '#7c3aed', label: 'JV', above: false },
-  ];
-  for (let yr = 1; yr <= maxYears; yr++) {
-    dotLines.forEach(({ line, color, above }) => {
-      const p = valAtYear(line, yr);
-      if (!p || isNaN(p.v)) return;
-      const cx = tx(p.t), cy = ty(p.v);
-      yearDots += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="${color}" stroke="white" stroke-width="1"/>`;
-      const yOff = above ? -7 : 10;
-      yearDots += `<text x="${cx}" y="${cy + yOff}" text-anchor="middle" font-size="8" fill="${color}" opacity="0.8">${fmtK(p.v)}</text>`;
-    });
-  }
-
-  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%">
+  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-height:340px">
     ${gridLines}
-    ${jvSaleBand}
     <path d="${areaD(jvHighLine, jvLowLine)}" fill="#8b5cf6" opacity="0.08"/>
-    <path d="${pathD(jvHighLine)}" fill="none" stroke="#8b5cf6" stroke-width="0.8" opacity="0.35"/>
-    <path d="${pathD(jvLowLine)}" fill="none" stroke="#8b5cf6" stroke-width="0.8" opacity="0.35"/>
-    ${jvTickSvg}
+    <path d="${pathD(jvHighLine)}" fill="none" stroke="#8b5cf6" stroke-width="0.8" opacity="0.3"/>
+    <path d="${pathD(jvLowLine)}" fill="none" stroke="#8b5cf6" stroke-width="0.8" opacity="0.3"/>
     <path d="${pathD(jvBaseLine)}" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-dasharray="6,3"/>
     <path d="${pathD(sellNowLine)}" fill="none" stroke="#2563eb" stroke-width="2"/>
     <path d="${pathD(spLine)}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2"/>
     <path d="${pathD(rentalLine)}" fill="none" stroke="#16a34a" stroke-width="2.5"/>
     ${startDot}
-    ${yearDots}
-    ${benchmarkDots}
-    ${scenarioDots}
-    ${endLabels}
-  </svg>`;
+    ${endDots}
+  </svg>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;font-size:12px">
+    <div style="padding:8px 10px;border-radius:6px;background:#f0f4ff;border-left:3px solid #2563eb">
+      <div style="font-weight:600;color:#2563eb">Risk-Free ${fmtPct(riskFree)}</div>
+      <div style="font-size:16px;font-weight:700;color:#2563eb">${fmtK(sellEnd.v)}</div>
+    </div>
+    <div style="padding:8px 10px;border-radius:6px;background:#fffbeb;border-left:3px solid #f59e0b">
+      <div style="font-weight:600;color:#d97706">S&P 500 (11%)</div>
+      <div style="font-size:16px;font-weight:700;color:#d97706">${fmtK(spEnd.v)}</div>
+    </div>
+    <div style="padding:8px 10px;border-radius:6px;background:#dcfce7;border-left:3px solid #16a34a">
+      <div style="font-weight:600;color:#16a34a">Rental (IRR ${fmtPct(o2.irr)})</div>
+      <div style="font-size:16px;font-weight:700;color:#16a34a">${fmtK(rentEnd.v)}</div>
+    </div>
+    <div style="padding:8px 10px;border-radius:6px;background:#faf5ff;border-left:3px solid #7c3aed">
+      <div style="font-weight:600;color:#7c3aed">JV $${jvBaseResult.psf}/sf (IRR ${fmtPct(o3.irr)})</div>
+      <div style="font-size:16px;font-weight:700;color:#7c3aed">${fmtK(jvBaseEnd.v)}</div>
+    </div>
+    <div style="padding:8px 10px;border-radius:6px;background:#faf5ff;border-left:3px solid #8b5cf6;opacity:0.7">
+      <div style="font-weight:600;color:#8b5cf6">JV high $${jvHighPsf}/sf</div>
+      <div style="font-size:16px;font-weight:700;color:#8b5cf6">${fmtK(jvHighEnd.v)}</div>
+    </div>
+    <div style="padding:8px 10px;border-radius:6px;background:#faf5ff;border-left:3px solid #8b5cf6;opacity:0.7">
+      <div style="font-weight:600;color:#8b5cf6">JV low $${jvLowPsf}/sf</div>
+      <div style="font-size:16px;font-weight:700;color:#8b5cf6">${fmtK(jvLowEnd.v)}</div>
+    </div>
+  </div>`;
 }
 
 // ============================================================
@@ -1981,8 +1920,8 @@ function presetScenario(type) {
       's2-rent': 3800, 's2-vacancy': 8, 's2-pm-fee': 10,
       's2-maintenance': 6000, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
       's2-utilities': 0, 's2-capex': 5000, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
-      's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 2, 's2-hold-years': 5,
-      's2-expense-growth': 3, 's2-risk-free': 4.4, 's2-exit-cost': 9,
+      's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 2,
+      's2-expense-growth': 3, 's2-risk-free': 4.4,
       's3-as-is-value': 1100000, 's3-mortgage': 548005, 's3-closing': 12000, 's3-basis': 800000,
       's3-architect': 18000, 's3-structural': 12000, 's3-civil': 10000, 's3-survey': 12000,
       's3-arborist': 1500, 's3-geo-soil': 10000, 's3-build-permit': 35000,
@@ -1993,9 +1932,9 @@ function presetScenario(type) {
       's3-loan-amount': 1500000, 's3-loan-rate': 9.5, 's3-loan-months': 24,
       's3-sale-psf': 650, 's3-sell-close-pct': 7.5,
       's3-sale-low-psf': 585, 's3-sale-high-psf': 715,
-      's3-my-pct': 45, 's3-dev-pct': 55, 's3-pref-return': 10,
-      's3-structure': 'equity', 's3-min-payout': 600000,
-      's3-tax-rate': 25, 's3-legal': 12000, 's3-accounting': 6000, 's3-other-txn': 8000
+      's3-my-pct': 45, 's3-dev-pct': 55, 's3-pref-return': 0,
+      's3-structure': 'equity', 's3-min-payout': 0,
+      's3-tax-rate': 25, 's3-legal': 0, 's3-accounting': 0, 's3-other-txn': 0
     },
     base: {
       's1-price-source': 'comps', 's1-sale-price': 1275000, 's1-commission': 5, 's1-closing-pct': 1.5, 's1-mortgage': 548005,
@@ -2003,8 +1942,8 @@ function presetScenario(type) {
       's2-rent': 4000, 's2-vacancy': 5, 's2-pm-fee': 7,
       's2-maintenance': 4500, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
       's2-utilities': 0, 's2-capex': 3000, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
-      's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 3, 's2-hold-years': 5,
-      's2-expense-growth': 2, 's2-risk-free': 4.4, 's2-exit-cost': 8,
+      's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 3,
+      's2-expense-growth': 2, 's2-risk-free': 4.4,
       's3-as-is-value': 1150000, 's3-mortgage': 548005, 's3-closing': 10000, 's3-basis': 800000,
       's3-architect': 15000, 's3-structural': 10000, 's3-civil': 8000, 's3-survey': 10000,
       's3-arborist': 1000, 's3-geo-soil': 8000, 's3-build-permit': 30000,
@@ -2015,9 +1954,9 @@ function presetScenario(type) {
       's3-loan-amount': 1500000, 's3-loan-rate': 7.5, 's3-loan-months': 24,
       's3-sale-psf': 723, 's3-sell-close-pct': 7,
       's3-sale-low-psf': 638, 's3-sale-high-psf': 795,
-      's3-my-pct': 50, 's3-dev-pct': 50, 's3-pref-return': 8,
-      's3-structure': 'equity', 's3-min-payout': 750000,
-      's3-tax-rate': 20, 's3-legal': 10000, 's3-accounting': 5000, 's3-other-txn': 5000
+      's3-my-pct': 50, 's3-dev-pct': 50, 's3-pref-return': 0,
+      's3-structure': 'equity', 's3-min-payout': 0,
+      's3-tax-rate': 20, 's3-legal': 0, 's3-accounting': 0, 's3-other-txn': 0
     },
     aggressive: {
       's1-price-source': 'comps', 's1-sale-price': 1350000, 's1-commission': 4.5, 's1-closing-pct': 1.5, 's1-mortgage': 548005,
@@ -2025,8 +1964,8 @@ function presetScenario(type) {
       's2-rent': 4200, 's2-vacancy': 3, 's2-pm-fee': 5,
       's2-maintenance': 3500, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
       's2-utilities': 0, 's2-capex': 2500, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
-      's2-mortgage-bal': 548005, 's2-appreciation': 5, 's2-rent-growth': 4, 's2-hold-years': 5,
-      's2-expense-growth': 1, 's2-risk-free': 4.4, 's2-exit-cost': 7,
+      's2-mortgage-bal': 548005, 's2-appreciation': 5, 's2-rent-growth': 4,
+      's2-expense-growth': 1, 's2-risk-free': 4.4,
       's3-as-is-value': 1200000, 's3-mortgage': 548005, 's3-closing': 8000, 's3-basis': 800000,
       's3-architect': 15000, 's3-structural': 10000, 's3-civil': 8000, 's3-survey': 10000,
       's3-arborist': 1000, 's3-geo-soil': 8000, 's3-build-permit': 30000,
@@ -2037,9 +1976,9 @@ function presetScenario(type) {
       's3-loan-amount': 1500000, 's3-loan-rate': 6.5, 's3-loan-months': 18,
       's3-sale-psf': 795, 's3-sell-close-pct': 6.5,
       's3-sale-low-psf': 723, 's3-sale-high-psf': 875,
-      's3-my-pct': 55, 's3-dev-pct': 45, 's3-pref-return': 6,
-      's3-structure': 'equity', 's3-min-payout': 850000,
-      's3-tax-rate': 18, 's3-legal': 8000, 's3-accounting': 4000, 's3-other-txn': 3000
+      's3-my-pct': 55, 's3-dev-pct': 45, 's3-pref-return': 0,
+      's3-structure': 'equity', 's3-min-payout': 0,
+      's3-tax-rate': 18, 's3-legal': 0, 's3-accounting': 0, 's3-other-txn': 0
     }
   };
 
@@ -2054,7 +1993,7 @@ function syncTimelineBtns() {
   const v = parseInt($('s3-loan-months').value);
   document.querySelectorAll('.tl-btn').forEach(btn => {
     const isActive = parseInt(btn.dataset.months) === v;
-    btn.style.background = isActive ? '#2563eb' : '#f3f4f6';
+    btn.style.background = isActive ? '#7c3aed' : 'white';
     btn.style.color = isActive ? 'white' : 'var(--text)';
     btn.style.fontWeight = isActive ? '600' : '400';
     btn.classList.toggle('active', isActive);
@@ -2071,7 +2010,7 @@ function exportCSV() {
     ['Net Cash / Wealth', o1.netCash, o2.totalNetWorth, o3.myNetAfterTax],
     ['Total Costs', o1.totalCosts, '', o3.totalProjectCost],
     ['Annualized Return (IRR)', 'N/A', ((o2.irr||0)*100).toFixed(1)+'%', ((o3.irr||0)*100).toFixed(1)+'%'],
-    ['Timeline', 'Immediate', o2.holdYears+' years', (o3.totalMonths||0)+' months'],
+    ['Timeline', 'Immediate', (o2.holdMonths||24)+' months', (o3.totalMonths||0)+' months'],
     [''],
     ['Option 1 Detail'],
     ['Sale Price', o1.price], ['Total Selling Costs', o1.totalCosts], ['Mortgage Payoff', o1.mortgage], ['Net Cash', o1.netCash],
@@ -2173,7 +2112,7 @@ function updateFactsAndAssumptions() {
     `→ Net Cash to Owner: ${fmt(o1.netCash)}`,
     '',
     '=== OPTION 2: KEEP AS RENTAL ===',
-    `Hold Period: ${val('s2-hold-years')} years`,
+    `Hold Period: ${val('s3-loan-months')} months (same as sell timeline)`,
     `Monthly Rent: $${val('s2-rent').toLocaleString()}`,
     `Rent Growth: ${val('s2-rent-growth')}%/year`,
     `Annual Appreciation: ${val('s2-appreciation')}%/year`,
@@ -2185,7 +2124,7 @@ function updateFactsAndAssumptions() {
     `Insurance: $${val('s2-insurance').toLocaleString()}/year`,
     `CapEx Reserve: $${val('s2-capex').toLocaleString()}/year`,
     `Mortgage: $${val('s2-mortgage-pmt').toLocaleString()}/mo at ${val('s2-int-rate')}%`,
-    `Exit Selling Cost: ${val('s2-exit-cost')}%`,
+    `Exit Selling Cost: ${(R.opt1.sellCostPct * 100).toFixed(1)}% (auto-synced from sell-now costs)`,
     `Risk-Free Rate (10yr bond): ${val('s2-risk-free')}%`,
     `→ IRR: ${fmtPct(o2.irr)}`,
     `→ Total Net Wealth at Exit: ${fmt(o2.totalNetWorth)}`,
@@ -2210,7 +2149,7 @@ function updateFactsAndAssumptions() {
     `  4. Preferred Return (${val('s3-pref-return')}%): pro-rata on capital`,
     `  5. Profit Split: me ${val('s3-my-pct')}% / dev ${val('s3-dev-pct')}%`,
     '',
-    `JV Structure: ${$('s3-structure').value} | My ${val('s3-my-pct')}% / Dev ${val('s3-dev-pct')}%`,
+    `JV Structure: Equity | My ${val('s3-my-pct')}% / Dev ${val('s3-dev-pct')}%`,
     `Tax Rate on Profit: ${val('s3-tax-rate')}%`,
     `My equity: ${fmt(o3.myContribution)} (land $${val('s3-as-is-value').toLocaleString()} − mortgage $${val('s3-mortgage').toLocaleString()})`,
     `Jeff\'s cash equity: ${fmt(o3.devContribution)} (construction costs beyond loan)`,
@@ -2226,12 +2165,11 @@ function updateFactsAndAssumptions() {
     `→ Jeff\'s Project Return: ${fmtPct(o3.jeffProjectReturn)}`,
     '',
     '=== BENCHMARKS ===',
+    `Sell Timeline: ${loanMonths} months (${jvYear.toFixed(1)} years) — applies to both Rental and JV`,
     `Risk-Free Rate (10yr bond): ${val('s2-risk-free')}%`,
     'S&P 500 Historical Average: 11%/year',
-    `Sell Now + Risk-Free (${val('s2-hold-years')}yr): ${fmt(sellNow * Math.pow(1 + rfRate, val('s2-hold-years')))}`,
-    `Sell Now + S&P (${val('s2-hold-years')}yr): ${fmt(sellNow * Math.pow(1.11, val('s2-hold-years')))}`,
-    `Sell Now + Risk-Free at JV sale (${jvYear.toFixed(1)}yr): ${fmt(sellNow * Math.pow(1 + rfRate, jvYear))}`,
-    `Sell Now + S&P at JV sale (${jvYear.toFixed(1)}yr): ${fmt(sellNow * Math.pow(1.11, jvYear))}`,
+    `Sell Now + Risk-Free (${jvYear.toFixed(1)}yr): ${fmt(sellNow * Math.pow(1 + rfRate, jvYear))}`,
+    `Sell Now + S&P (${jvYear.toFixed(1)}yr): ${fmt(sellNow * Math.pow(1.11, jvYear))}`,
   ];
 
   const fb = $('facts-block');
