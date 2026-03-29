@@ -327,7 +327,7 @@ td { font-variant-numeric: tabular-nums; }
         </div>
         <div class="field">
           <label>Risk-Free Rate <span class="tip" data-tip="Opportunity cost of capital. US 10yr bond ≈ 4%. Used to show the true cost of negative cash flows.">?</span></label>
-          <div class="input-wrap"><input type="number" id="s2-risk-free" value="4" step="0.25"><span class="suffix">%</span></div>
+          <div class="input-wrap"><input type="number" id="s2-risk-free" value="4.4" step="0.25"><span class="suffix">%</span></div>
         </div>
       </div>
       <div class="field-row">
@@ -630,17 +630,13 @@ td { font-variant-numeric: tabular-nums; }
 <!-- ===================== SENSITIVITY ===================== -->
 <div class="section" id="sec-sensitivity">
   <div class="card">
-    <h3>Sensitivity: My JV Payout by Sale $/sqft × Construction $/sqft</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Green = beats selling now. Yellow = within 10% of selling now. Red = worse than selling now.</p>
-    <div style="overflow-x:auto"><table class="sens-table" id="tbl-sens-cost"><thead></thead><tbody></tbody></table></div>
-  </div>
-  <div class="card" style="margin-top:20px">
-    <h3>Sensitivity: My JV Payout by Sale $/sqft × Loan Rate</h3>
-    <div style="overflow-x:auto"><table class="sens-table" id="tbl-sens-time"><thead></thead><tbody></tbody></table></div>
-  </div>
-  <div class="card" style="margin-top:20px">
-    <h3>Break-Even Analysis (vs. Selling Now)</h3>
+    <h3>JV Break-Even vs. Selling Now</h3>
     <div class="result-grid" id="res-breakeven"></div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>JV Outcomes by Sale $/sqft</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">How your JV net cash and IRR change as the finished sale price varies. Green = beats selling now. Red = worse.</p>
+    <div style="overflow-x:auto"><table class="sens-table" id="tbl-sens-psf"><thead></thead><tbody></tbody></table></div>
   </div>
 </div>
 
@@ -844,6 +840,18 @@ td { font-variant-numeric: tabular-nums; }
       <tr><td><strong>Preferred Return</strong></td><td>A hurdle rate on invested capital that must be paid before profit splitting begins. Protects the capital contributor.</td></tr>
       <tr><td><strong>Waterfall</strong></td><td>The sequential order in which sale proceeds are distributed: first repay debt, then return capital, then preferred returns, then profit split.</td></tr>
     </table>
+  </div>
+
+  <div class="card" style="margin-top:20px;border:2px solid var(--accent)">
+    <h3>Known Facts (verified data points)</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Copy this section to validate with another AI or professional. These are hard numbers from real sources.</p>
+    <div id="facts-block" style="font-family:monospace;font-size:12px;line-height:1.8;background:#f8fafc;padding:14px;border-radius:6px;white-space:pre-wrap"></div>
+  </div>
+
+  <div class="card" style="margin-top:20px;border:2px solid #f59e0b">
+    <h3>Assumptions (inputs that drive the model)</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">These are adjustable assumptions. Change any of them in the input fields to see the impact. Copy to validate whether they are reasonable.</p>
+    <div id="assumptions-block" style="font-family:monospace;font-size:12px;line-height:1.8;background:#fffbeb;padding:14px;border-radius:6px;white-space:pre-wrap"></div>
   </div>
 </div>
 
@@ -1589,15 +1597,21 @@ function calcComparison() {
   const jvYear = jvMonth / 12;
   const riskFree = (val('s2-risk-free') || 4) / 100;
 
-  const sellNowAtJV = opt1Cash * Math.pow(1 + riskFree, jvYear);
-  const jvBeatsSellNow = opt3Cash > sellNowAtJV;
+  const spReturn = 0.11;
   const sellNowAtRental = opt1Cash * Math.pow(1 + riskFree, opt2Time);
-  const rentalBeatsSellNow = opt2Cash > sellNowAtRental;
+  const spAtRental = opt1Cash * Math.pow(1 + spReturn, opt2Time);
+  const spAtJV = opt1Cash * Math.pow(1 + spReturn, jvYear);
+  const rentalBeatsSP = opt2Cash > spAtRental;
+
+  const jvLowPsf = val('s3-sale-low-psf') || 638;
+  const jvHighPsf = val('s3-sale-high-psf') || 920;
+  const jvLow = calcJVProject(jvLowPsf, null, null);
+  const jvHigh = calcJVProject(jvHighPsf, null, null);
 
   $('decision-content').innerHTML = `
-    <p><strong>Sell Now</strong> gives you ${fmt(opt1Cash)} today with zero risk. At ${fmtPct(riskFree)} risk-free, this grows to ${fmt(sellNowAtJV)} by month ${jvMonth} and ${fmt(sellNowAtRental)} by year ${opt2Time.toFixed(0)}.</p>
-    <p><strong>Keep as Rental</strong> builds to ${fmt(opt2Cash)} over ${opt2Time.toFixed(0)} years (IRR ${fmtPct(opt2Ann)}). ${rentalBeatsSellNow ? 'This beats selling now and investing at the risk-free rate.' : 'This trails selling now and investing at the risk-free rate.'}</p>
-    <p><strong>JV Redevelopment</strong> yields ${fmt(opt3Cash)} at month ${jvMonth} (IRR ${fmtPct(opt3Ann)}). ${jvBeatsSellNow ? 'This beats selling now' : 'This trails selling now'} by ${fmt(Math.abs(opt3Cash - sellNowAtJV))} at that point. ${opt3Ann > opt2Ann ? 'Higher IRR than rental but concentrated in a shorter, riskier window.' : 'Lower IRR than rental — the rental path is more attractive on a risk-adjusted basis.'}</p>
+    <p><strong>Sell Now + Invest</strong>: ${fmt(opt1Cash)} today → ${fmt(sellNowAtRental)} at risk-free (${fmtPct(riskFree)}) or ${fmt(spAtRental)} in S&P 500 (11%) over ${opt2Time.toFixed(0)} years.</p>
+    <p><strong>Keep as Rental</strong>: builds to ${fmt(opt2Cash)} over ${opt2Time.toFixed(0)} years (IRR ${fmtPct(opt2Ann)}). ${rentalBeatsSP ? 'Beats even S&P 500 returns.' : `Trails S&P 500 by ${fmt(spAtRental - opt2Cash)}.`}</p>
+    <p><strong>JV Redevelopment</strong>: range ${fmt(jvLow.myNetCashAtSale)} ($${jvLowPsf}/sf) to ${fmt(jvHigh.myNetCashAtSale)} ($${jvHighPsf}/sf) at month ${jvMonth}. Base case (${fmt(opt3Cash)}) IRR ${fmtPct(opt3Ann)}. S&P benchmark at that point: ${fmt(spAtJV)}.</p>
   `;
 }
 
@@ -1607,30 +1621,34 @@ function calcComparison() {
 function drawTimelineChart(o1, o2, o3) {
   const container = $('timeline-chart');
   const riskFree = (val('s2-risk-free') || 4) / 100;
+  const spReturn = 0.11;
   const holdYears = o2.holdYears || 5;
   const jvMonths = o3.totalMonths || 14;
   const jvYear = jvMonths / 12;
   const maxYears = Math.max(holdYears, Math.ceil(jvYear) + 1);
   const sellNowCash = o1.netCash || 0;
-  const jvCash = o3.myNetCashAtSale || 0;
   const exitCostPct = o2.exitCostPct || 0.08;
 
-  const steps = maxYears * 4;
-  const sellNowLine = [];
-  const rentalLine = [];
-  const jvLine = [];
+  const jvLowPsf = val('s3-sale-low-psf') || 638;
+  const jvHighPsf = val('s3-sale-high-psf') || 920;
+  const jvLow = calcJVProject(jvLowPsf, null, null);
+  const jvHigh = calcJVProject(jvHighPsf, null, null);
+  const jvLowCash = jvLow.myNetCashAtSale || 0;
+  const jvHighCash = jvHigh.myNetCashAtSale || 0;
+  const jvBaseCash = o3.myNetCashAtSale || 0;
 
-  // All lines start at the same point: sell-now net cash (your realizable wealth today)
+  const steps = maxYears * 4;
+  const sellNowLine = [], spLine = [], rentalLine = [];
+  const jvLowLine = [], jvHighLine = [], jvBaseLine = [];
+
   rentalLine.push({ t: 0, v: sellNowCash });
 
   for (let i = 0; i <= steps; i++) {
     const t = (i / steps) * maxYears;
 
-    // Sell Now: invest at risk-free rate
     sellNowLine.push({ t, v: sellNowCash * Math.pow(1 + riskFree, t) });
+    spLine.push({ t, v: sellNowCash * Math.pow(1 + spReturn, t) });
 
-    // Rental: "if I sold at time t, what would I walk away with?"
-    // = propertyValue(t) × (1 - exitCostPct) - mortgageBalance(t) + cumulative cash flows
     if (t > 0 && t <= holdYears && o2.yearlyData && o2.yearlyData.length > 0) {
       const yr = Math.min(Math.floor(t), o2.yearlyData.length - 1);
       const frac = t - Math.floor(t);
@@ -1643,22 +1661,22 @@ function drawTimelineChart(o1, o2, o3) {
       rentalLine.push({ t, v: netIfSold + cumCF });
     }
 
-    // JV: during construction you're paying mortgage (wealth decreasing from sell-now baseline)
-    // at sale you receive jvNetCashAtSale; after that, invest at risk-free
-    if (t <= jvYear) {
-      const mortgagePaid = (o3.mortgagePmt || 0) * t * 12;
-      jvLine.push({ t, v: sellNowCash - mortgagePaid });
-    } else {
-      jvLine.push({ t, v: jvCash * Math.pow(1 + riskFree, t - jvYear) });
-    }
+    const mortPmt = o3.mortgagePmt || 0;
+    [{ line: jvLowLine, cash: jvLowCash }, { line: jvHighLine, cash: jvHighCash }, { line: jvBaseLine, cash: jvBaseCash }].forEach(({ line, cash }) => {
+      if (t <= jvYear) {
+        line.push({ t, v: sellNowCash - mortPmt * t * 12 });
+      } else {
+        line.push({ t, v: cash * Math.pow(1 + riskFree, t - jvYear) });
+      }
+    });
   }
 
-  const allVals = [...sellNowLine, ...rentalLine, ...jvLine].map(p => p.v);
+  const allVals = [...sellNowLine, ...spLine, ...rentalLine, ...jvLowLine, ...jvHighLine].map(p => p.v);
   const minVal = Math.min(...allVals) * 0.95;
   const maxVal = Math.max(...allVals) * 1.05;
   const valRange = maxVal - minVal || 1;
 
-  const w = 700, h = 340, padL = 80, padR = 60, padT = 30, padB = 50;
+  const w = 720, h = 360, padL = 80, padR = 70, padT = 30, padB = 60;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -1666,6 +1684,11 @@ function drawTimelineChart(o1, o2, o3) {
   function ty(v) { return padT + plotH - ((v - minVal) / valRange) * plotH; }
   function pathD(pts) {
     return pts.filter(p => !isNaN(p.v)).map((p, i) => `${i === 0 ? 'M' : 'L'}${tx(p.t).toFixed(1)},${ty(p.v).toFixed(1)}`).join(' ');
+  }
+  function areaD(upper, lower) {
+    const fwd = upper.filter(p => !isNaN(p.v)).map((p, i) => `${i === 0 ? 'M' : 'L'}${tx(p.t).toFixed(1)},${ty(p.v).toFixed(1)}`).join(' ');
+    const rev = [...lower].filter(p => !isNaN(p.v)).reverse().map(p => `L${tx(p.t).toFixed(1)},${ty(p.v).toFixed(1)}`).join(' ');
+    return fwd + ' ' + rev + ' Z';
   }
 
   let gridLines = '';
@@ -1682,53 +1705,50 @@ function drawTimelineChart(o1, o2, o3) {
     gridLines += `<text x="${x}" y="${h - padB + 16}" text-anchor="middle" font-size="10" fill="#9ca3af">Yr ${yr}</text>`;
   }
 
-  // Starting point marker
   const startDot = `<circle cx="${tx(0)}" cy="${ty(sellNowCash)}" r="5" fill="#374151" stroke="white" stroke-width="2"/>
-    <text x="${tx(0) - 8}" y="${ty(sellNowCash) - 10}" text-anchor="middle" font-size="10" fill="#374151" font-weight="700">${fmt(sellNowCash)}</text>
-    <text x="${tx(0) - 8}" y="${ty(sellNowCash) - 22}" text-anchor="middle" font-size="9" fill="#6b7280">Start</text>`;
+    <text x="${tx(0) + 8}" y="${ty(sellNowCash) - 8}" font-size="10" fill="#374151" font-weight="700">${fmt(sellNowCash)}</text>`;
 
-  // JV sale marker
   const jvX = tx(jvYear);
   const jvMarker = `<line x1="${jvX}" y1="${padT}" x2="${jvX}" y2="${h - padB}" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3"/>
     <text x="${jvX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="#8b5cf6">JV Sale (mo ${jvMonths})</text>`;
 
-  // Dots at JV sale time for all three lines
-  const sellAtJV = sellNowCash * Math.pow(1 + riskFree, jvYear);
-  const rentalAtJV = rentalLine.find(p => p.t >= jvYear) || rentalLine[rentalLine.length - 1];
-  const dots = `
-    <circle cx="${jvX}" cy="${ty(jvCash)}" r="5" fill="#8b5cf6" stroke="white" stroke-width="2"/>
-    <text x="${jvX + 8}" y="${ty(jvCash) + 4}" font-size="10" fill="#8b5cf6" font-weight="600">${fmt(jvCash)}</text>
-    <circle cx="${jvX}" cy="${ty(sellAtJV)}" r="4" fill="#2563eb" stroke="white" stroke-width="2"/>
-    <circle cx="${jvX}" cy="${ty(rentalAtJV.v)}" r="4" fill="#16a34a" stroke="white" stroke-width="2"/>
-  `;
-
-  // End-of-line labels
   const sellEnd = sellNowLine[sellNowLine.length - 1];
+  const spEnd = spLine[spLine.length - 1];
   const rentEnd = rentalLine[rentalLine.length - 1];
-  const jvEnd = jvLine[jvLine.length - 1];
+  const jvHighEnd = jvHighLine[jvHighLine.length - 1];
+  const jvLowEnd = jvLowLine[jvLowLine.length - 1];
+
   const endLabels = `
-    <text x="${w - padR + 4}" y="${ty(sellEnd.v) + 4}" font-size="10" fill="#2563eb" font-weight="600">${fmt(sellEnd.v)}</text>
-    <text x="${w - padR + 4}" y="${ty(rentEnd.v) + 4}" font-size="10" fill="#16a34a" font-weight="600">${fmt(rentEnd.v)}</text>
-    <text x="${w - padR + 4}" y="${ty(jvEnd.v) + 4}" font-size="10" fill="#8b5cf6" font-weight="600">${fmt(jvEnd.v)}</text>
+    <text x="${w - padR + 4}" y="${ty(sellEnd.v) + 4}" font-size="9" fill="#2563eb" font-weight="600">${fmt(sellEnd.v)}</text>
+    <text x="${w - padR + 4}" y="${ty(spEnd.v) + 4}" font-size="9" fill="#f59e0b" font-weight="600">${fmt(spEnd.v)}</text>
+    <text x="${w - padR + 4}" y="${ty(rentEnd.v) + 4}" font-size="9" fill="#16a34a" font-weight="600">${fmt(rentEnd.v)}</text>
+    <text x="${w - padR + 4}" y="${ty(jvHighEnd.v) - 2}" font-size="8" fill="#8b5cf6">$${jvHighPsf}/sf</text>
+    <text x="${w - padR + 4}" y="${ty(jvLowEnd.v) + 10}" font-size="8" fill="#8b5cf6">$${jvLowPsf}/sf</text>
   `;
 
+  const ly = h - 14;
   const legend = `
-    <line x1="${padL}" y1="${h - 10}" x2="${padL + 20}" y2="${h - 10}" stroke="#2563eb" stroke-width="2.5"/>
-    <text x="${padL + 24}" y="${h - 6}" font-size="10" fill="#2563eb">Sell Now (invest at ${fmtPct(riskFree)})</text>
-    <line x1="${padL + 180}" y1="${h - 10}" x2="${padL + 200}" y2="${h - 10}" stroke="#16a34a" stroke-width="2.5"/>
-    <text x="${padL + 204}" y="${h - 6}" font-size="10" fill="#16a34a">Keep as Rental</text>
-    <line x1="${padL + 320}" y1="${h - 10}" x2="${padL + 340}" y2="${h - 10}" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="6,3"/>
-    <text x="${padL + 344}" y="${h - 6}" font-size="10" fill="#8b5cf6">JV Redevelopment</text>
+    <line x1="${padL}" y1="${ly}" x2="${padL+16}" y2="${ly}" stroke="#2563eb" stroke-width="2"/>
+    <text x="${padL+20}" y="${ly+4}" font-size="9" fill="#2563eb">Risk-Free ${fmtPct(riskFree)}</text>
+    <line x1="${padL+110}" y1="${ly}" x2="${padL+126}" y2="${ly}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
+    <text x="${padL+130}" y="${ly+4}" font-size="9" fill="#f59e0b">S&P 500 (11%)</text>
+    <line x1="${padL+230}" y1="${ly}" x2="${padL+246}" y2="${ly}" stroke="#16a34a" stroke-width="2"/>
+    <text x="${padL+250}" y="${ly+4}" font-size="9" fill="#16a34a">Rental</text>
+    <rect x="${padL+300}" y="${ly-5}" width="16" height="10" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="${padL+320}" y="${ly+4}" font-size="9" fill="#8b5cf6">JV Range ($${jvLowPsf}–$${jvHighPsf}/sf)</text>
   `;
 
   container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="max-width:${w}px;width:100%">
     ${gridLines}
     ${jvMarker}
+    <path d="${areaD(jvHighLine, jvLowLine)}" fill="#8b5cf6" opacity="0.15"/>
+    <path d="${pathD(jvHighLine)}" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.5"/>
+    <path d="${pathD(jvLowLine)}" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.5"/>
+    <path d="${pathD(jvBaseLine)}" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6,3"/>
     <path d="${pathD(sellNowLine)}" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+    <path d="${pathD(spLine)}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
     <path d="${pathD(rentalLine)}" fill="none" stroke="#16a34a" stroke-width="2.5"/>
-    <path d="${pathD(jvLine)}" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="6,3"/>
     ${startDot}
-    ${dots}
     ${endLabels}
     ${legend}
   </svg>`;
@@ -1740,91 +1760,53 @@ function drawTimelineChart(o1, o2, o3) {
 function calcSensitivity() {
   const baseSalePsf = val('s3-sale-psf');
   const baseConstPsf = val('s3-construction-psf');
-  const baseLoanRate = val('s3-loan-rate');
   const sellNowNet = R.opt1.netCash || 0;
   const sqft = val('s3-building-sqft');
+  const spReturn = 0.11;
+  const jvYear = (R.opt3.totalMonths || 14) / 12;
+  const spAtJV = sellNowNet * Math.pow(1 + spReturn, jvYear);
 
-  // Sale $/sqft × Construction $/sqft sensitivity
-  const spOffsets = [-100, -50, 0, 50, 100];
-  const ccOffsets = [-50, -25, 0, 25, 50];
-
-  let html1 = '<thead><tr><th>Sale $/sf \\ Const $/sf</th>';
-  ccOffsets.forEach(cc => {
-    const v = baseConstPsf + cc;
-    const label = cc === 0 ? 'Base' : (cc > 0 ? '+' : '') + cc;
-    html1 += `<th>$${v}/sf<br><small>${label}</small></th>`;
-  });
-  html1 += '</tr></thead><tbody>';
-
-  spOffsets.forEach(sp => {
-    const salePsf = baseSalePsf + sp;
-    const label = sp === 0 ? 'Base' : (sp > 0 ? '+' : '') + sp;
-    html1 += `<tr><td>$${salePsf}/sf<br><small>${label}</small></td>`;
-    ccOffsets.forEach(cc => {
-      const constPsf = baseConstPsf + cc;
-      const result = calcJVProject(salePsf, constPsf, null);
-      const myNet = result.myNetAfterTax;
-      const diff = myNet - sellNowNet;
-      const cls = diff > sellNowNet * 0.1 ? 'cell-green' : diff >= -sellNowNet * 0.1 ? 'cell-yellow' : 'cell-red';
-      const isBase = sp === 0 && cc === 0 ? ' cell-base' : '';
-      html1 += `<td class="${cls}${isBase}">${fmt(myNet)}</td>`;
-    });
-    html1 += '</tr>';
-  });
-  html1 += '</tbody>';
-  $('tbl-sens-cost').innerHTML = html1;
-
-  // Sale $/sqft × Loan Rate sensitivity
-  const rateOffsets = [-2, -1, 0, 1, 2];
-
-  let html2 = '<thead><tr><th>Sale $/sf \\ Loan Rate</th>';
-  rateOffsets.forEach(r => {
-    const rate = baseLoanRate + r;
-    const label = r === 0 ? 'Base' : (r > 0 ? '+' : '') + r + '%';
-    html2 += `<th>${rate}%<br><small>${label}</small></th>`;
-  });
-  html2 += '</tr></thead><tbody>';
-
-  spOffsets.forEach(sp => {
-    const salePsf = baseSalePsf + sp;
-    const label = sp === 0 ? 'Base' : (sp > 0 ? '+' : '') + sp;
-    html2 += `<tr><td>$${salePsf}/sf<br><small>${label}</small></td>`;
-    rateOffsets.forEach(r => {
-      const rate = baseLoanRate + r;
-      const result = calcJVProject(salePsf, null, rate);
-      const myNet = result.myNetAfterTax;
-      const diff = myNet - sellNowNet;
-      const cls = diff > sellNowNet * 0.1 ? 'cell-green' : diff >= -sellNowNet * 0.1 ? 'cell-yellow' : 'cell-red';
-      const isBase = sp === 0 && r === 0 ? ' cell-base' : '';
-      html2 += `<td class="${cls}${isBase}">${fmt(myNet)}</td>`;
-    });
-    html2 += '</tr>';
-  });
-  html2 += '</tbody>';
-  $('tbl-sens-time').innerHTML = html2;
-
-  calcBreakEven(sellNowNet, baseSalePsf, baseConstPsf, sqft);
-}
-
-function calcBreakEven(sellNowNet, baseSalePsf, baseConstPsf, sqft) {
+  // Break-even
   let beSalePsf = 0;
   for (let psf = 400; psf <= 1200; psf += 5) {
     const r = calcJVProject(psf, null, null);
-    if (r.myNetAfterTax >= sellNowNet) { beSalePsf = psf; break; }
+    if (r.myNetCashAtSale >= sellNowNet) { beSalePsf = psf; break; }
   }
-
-  let beConstPsf = 0;
-  for (let psf = 500; psf >= 50; psf -= 5) {
-    const r = calcJVProject(null, psf, null);
-    if (r.myNetAfterTax >= sellNowNet) { beConstPsf = psf; break; }
+  let beSPPsf = 0;
+  for (let psf = 400; psf <= 1200; psf += 5) {
+    const r = calcJVProject(psf, null, null);
+    if (r.myNetCashAtSale >= spAtJV) { beSPPsf = psf; break; }
   }
 
   $('res-breakeven').innerHTML = `
-    <div class="result-item"><div class="r-label">Break-Even Sale $/sqft <span class="tip" data-tip="Minimum $/sqft for JV to match selling now">?</span></div><div class="r-value">$${beSalePsf}/sf (${fmt(beSalePsf * sqft)})</div></div>
-    <div class="result-item"><div class="r-label">Max Construction $/sqft <span class="tip" data-tip="Maximum construction $/sqft for JV to still beat selling now">?</span></div><div class="r-value">$${beConstPsf}/sf (${fmt(beConstPsf * sqft)})</div></div>
+    <div class="result-item highlight"><div class="r-label">Break-Even vs Sell Now <span class="tip" data-tip="Min $/sqft where JV net cash ≥ sell-now net cash">?</span></div><div class="r-value">$${beSalePsf}/sf → ${fmt(beSalePsf * sqft)}</div></div>
+    <div class="result-item"><div class="r-label">Break-Even vs S&P 500 (11%) <span class="tip" data-tip="Min $/sqft where JV beats selling now and investing in S&P for ${(jvYear).toFixed(1)} yrs">?</span></div><div class="r-value">$${beSPPsf}/sf → ${fmt(beSPPsf * sqft)}</div></div>
     <div class="result-item"><div class="r-label">Sell Now Baseline</div><div class="r-value">${fmt(sellNowNet)}</div></div>
-    <div class="result-item"><div class="r-label">Current Sale $/sqft</div><div class="r-value">$${baseSalePsf}/sf (${fmt(baseSalePsf * sqft)})</div></div>
+    <div class="result-item"><div class="r-label">S&P Benchmark (${(jvYear).toFixed(1)} yrs)</div><div class="r-value">${fmt(spAtJV)}</div></div>
   `;
+
+  // Single table: JV outcomes at various sale $/sqft
+  const psfValues = [550, 600, 638, 680, 723, 770, 800, 850, 900, 950, 1000];
+  let html = `<thead><tr><th>Sale $/sf</th><th>Sale Price</th><th>My Net Cash</th><th>vs Sell Now</th><th>IRR</th><th>Verdict</th></tr></thead><tbody>`;
+  psfValues.forEach(psf => {
+    const r = calcJVProject(psf, null, null);
+    const diff = r.myNetCashAtSale - sellNowNet;
+    const isBase = psf === baseSalePsf;
+    const beatsSP = r.myNetCashAtSale >= spAtJV;
+    const beatsSellNow = r.myNetCashAtSale >= sellNowNet;
+    const cls = beatsSP ? 'cell-green' : beatsSellNow ? 'cell-yellow' : 'cell-red';
+    const verdict = beatsSP ? 'Beats S&P' : beatsSellNow ? 'Beats Sell Now' : 'Worse';
+    html += `<tr${isBase ? ' style="font-weight:700;background:#f0f4ff"' : ''}>
+      <td>$${psf}/sf${isBase ? ' ★' : ''}</td>
+      <td>${fmt(psf * sqft)}</td>
+      <td class="${cls}">${fmt(r.myNetCashAtSale)}</td>
+      <td class="${diff >= 0 ? '' : 'negative'}">${fmt(diff)}</td>
+      <td>${fmtPct(r.irr)}</td>
+      <td class="${cls}" style="font-size:11px">${verdict}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  $('tbl-sens-psf').innerHTML = html;
 }
 
 // ============================================================
@@ -1934,7 +1916,7 @@ function presetScenario(type) {
       's2-maintenance': 6000, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
       's2-utilities': 0, 's2-capex': 5000, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
       's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 2, 's2-hold-years': 5,
-      's2-expense-growth': 3, 's2-risk-free': 4, 's2-exit-cost': 9,
+      's2-expense-growth': 3, 's2-risk-free': 4.4, 's2-exit-cost': 9,
       's3-as-is-value': 1100000, 's3-mortgage': 548005, 's3-closing': 12000, 's3-basis': 800000,
       's3-architect': 18000, 's3-structural': 12000, 's3-civil': 10000, 's3-survey': 12000,
       's3-arborist': 1500, 's3-geo-soil': 10000, 's3-build-permit': 35000,
@@ -1956,7 +1938,7 @@ function presetScenario(type) {
       's2-maintenance': 4500, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
       's2-utilities': 0, 's2-capex': 3000, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
       's2-mortgage-bal': 548005, 's2-appreciation': 2, 's2-rent-growth': 3, 's2-hold-years': 5,
-      's2-expense-growth': 2, 's2-risk-free': 4, 's2-exit-cost': 8,
+      's2-expense-growth': 2, 's2-risk-free': 4.4, 's2-exit-cost': 8,
       's3-as-is-value': 1150000, 's3-mortgage': 548005, 's3-closing': 10000, 's3-basis': 800000,
       's3-architect': 15000, 's3-structural': 10000, 's3-civil': 8000, 's3-survey': 10000,
       's3-arborist': 1000, 's3-geo-soil': 8000, 's3-build-permit': 30000,
@@ -1978,7 +1960,7 @@ function presetScenario(type) {
       's2-maintenance': 3500, 's2-prop-tax': 9191, 's2-insurance': 1662, 's2-hoa': 0,
       's2-utilities': 0, 's2-capex': 2500, 's2-mortgage-pmt': 4057, 's2-int-rate': 3.75,
       's2-mortgage-bal': 548005, 's2-appreciation': 5, 's2-rent-growth': 4, 's2-hold-years': 5,
-      's2-expense-growth': 1, 's2-risk-free': 4, 's2-exit-cost': 7,
+      's2-expense-growth': 1, 's2-risk-free': 4.4, 's2-exit-cost': 7,
       's3-as-is-value': 1200000, 's3-mortgage': 548005, 's3-closing': 8000, 's3-basis': 800000,
       's3-architect': 15000, 's3-structural': 10000, 's3-civil': 8000, 's3-survey': 10000,
       's3-arborist': 1000, 's3-geo-soil': 8000, 's3-build-permit': 30000,
@@ -2052,6 +2034,96 @@ function recalcAll() {
   calcOption3();
   calcComparison();
   calcSensitivity();
+  updateFactsAndAssumptions();
+}
+
+function updateFactsAndAssumptions() {
+  const o1 = R.opt1, o2 = R.opt2, o3 = R.opt3;
+  const facts = [
+    '=== PROPERTY ===',
+    'Address: 4333 123rd Ave SE, Bellevue, WA 98006',
+    'Lot Size: 10,696 SF',
+    `Mortgage Principal: $${val('s1-mortgage').toLocaleString()} at ${val('s2-int-rate')}% fixed`,
+    `Monthly Mortgage Payment: $${val('s2-mortgage-pmt').toLocaleString()}`,
+    `2025 King County Assessment: $1,358,000`,
+    `Annual Property Tax: $${val('s2-prop-tax').toLocaleString()}`,
+    `Insurance: $${val('s2-insurance').toLocaleString()}/year`,
+    '',
+    '=== MARKET ESTIMATES ===',
+    'Redfin Estimate: $1,534,901',
+    'Zillow Estimate: $1,509,300',
+    `Market Comps (developer land value): ~$1,275,000`,
+    '',
+    '=== RENTAL ACTUALS ===',
+    `Monthly Rent: $${val('s2-rent').toLocaleString()}`,
+    '2025 Repair: $6,794 | Cash in: $42,000 | Take home: $35,205',
+    '2026 Q1 Repair: $1,475 | Cash in: $10,800 | Take home: $9,323',
+    '',
+    '=== COMPARABLE SALES (same street, 123rd Ave SE) ===',
+    '4401: Bought 2024/8 $1.30M → Sold 2025/8 $3.00M (4,263sf / 10,668sf lot)',
+    '4257: Bought 2024/4 $1.15M → Sold 2025/7 $3.60M (4,377sf / 11,164sf lot)',
+    '4243: Bought 2022/1 $961K → Sold 2023/9 $2.975M',
+    '',
+    '=== DEVELOPER BUDGET (Jeff\'s Excel) ===',
+    `Land Value: $${val('s3-land-price').toLocaleString()}`,
+    `Building Size: ${val('s3-building-sqft').toLocaleString()} sqft`,
+    `Construction: $${val('s3-construction-psf')}/sqft`,
+    `Construction Loan: $${val('s3-loan-amount').toLocaleString()} at ${val('s3-loan-rate')}% for ${val('s3-loan-months')} months`,
+    `Loan Closing: $${Math.round(val('s3-loan-amount') * 0.0175).toLocaleString()}`,
+    `Loan Interest: $${Math.round(val('s3-loan-amount') * val('s3-loan-rate') / 100 * val('s3-loan-months') / 12).toLocaleString()}`,
+    `WSST Rate: ${val('s3-wsst-rate')}%`,
+    `Jeff\'s 3 scenarios: $3.0M / $3.4M / $3.74M (638/723/795 $/sqft)`,
+  ];
+
+  const assumptions = [
+    '=== OPTION 1: SELL NOW ===',
+    `Sale Price: $${val('s1-price').toLocaleString()} (source: ${$('s1-price-source').value})`,
+    `Agent Commission: ${val('s1-agent-pct')}%`,
+    `Closing Costs: ${val('s1-closing-pct')}%`,
+    `Excise Tax: ${val('s1-excise-pct')}%`,
+    `Other Costs: $${val('s1-other-costs').toLocaleString()}`,
+    `→ Net Cash to Owner: ${fmt(o1.netCash)}`,
+    '',
+    '=== OPTION 2: KEEP AS RENTAL ===',
+    `Hold Period: ${val('s2-hold-years')} years`,
+    `Monthly Rent: $${val('s2-rent').toLocaleString()}`,
+    `Rent Growth: ${val('s2-rent-growth')}%/year`,
+    `Annual Appreciation: ${val('s2-appreciation')}%/year`,
+    `Expense Growth: ${val('s2-expense-growth')}%/year`,
+    `Vacancy Rate: ${val('s2-vacancy')}%`,
+    `Property Management Fee: ${val('s2-pm-fee')}%`,
+    `Maintenance: $${val('s2-maintenance').toLocaleString()}/year`,
+    `Insurance: $${val('s2-insurance').toLocaleString()}/year`,
+    `Exit Selling Cost: ${val('s2-exit-cost')}%`,
+    `Risk-Free Rate (10yr bond): ${val('s2-risk-free')}%`,
+    `→ IRR: ${fmtPct(o2.irr)}`,
+    `→ Total Net Wealth at Exit: ${fmt(o2.totalNetWorth)}`,
+    '',
+    '=== OPTION 3: JV REDEVELOPMENT ===',
+    `Land Price: $${val('s3-land-price').toLocaleString()}`,
+    `Building: ${val('s3-building-sqft')} sqft × $${val('s3-construction-psf')}/sqft = $${(val('s3-building-sqft') * val('s3-construction-psf')).toLocaleString()}`,
+    `Construction Loan: $${val('s3-loan-amount').toLocaleString()} at ${val('s3-loan-rate')}% for ${val('s3-loan-months')} months`,
+    `Sale Price: $${val('s3-sale-psf')}/sqft × ${val('s3-building-sqft')} = $${(val('s3-sale-psf') * val('s3-building-sqft')).toLocaleString()}`,
+    `Selling Costs at Exit: ${val('s3-sell-close-pct')}%`,
+    `JV Structure: ${$('s3-structure').value} | My ${val('s3-my-pct')}% / Dev ${val('s3-dev-pct')}%`,
+    `Preferred Return: ${val('s3-pref-return')}%`,
+    `Tax Rate on Profit: ${val('s3-tax-rate')}%`,
+    `My equity: ${fmt(o3.myContribution)} (land $${val('s3-land-price').toLocaleString()} − mortgage $${val('s1-mortgage').toLocaleString()})`,
+    `Jeff\'s cash equity: ${fmt(o3.devContribution)} (dev costs − loan)`,
+    `→ IRR: ${fmtPct(o3.irr)}`,
+    `→ My Net Cash at Sale: ${fmt(o3.myNetCashAtSale)}`,
+    '',
+    '=== BENCHMARKS ===',
+    `Risk-Free Rate (10yr bond): ${val('s2-risk-free')}%`,
+    'S&P 500 Historical Average: 11%/year',
+    `Sell Now + Risk-Free (${val('s2-hold-years')}yr): ${fmt((o1.netCash || 0) * Math.pow(1 + val('s2-risk-free') / 100, val('s2-hold-years')))}`,
+    `Sell Now + S&P (${val('s2-hold-years')}yr): ${fmt((o1.netCash || 0) * Math.pow(1.11, val('s2-hold-years')))}`,
+  ];
+
+  const fb = $('facts-block');
+  const ab = $('assumptions-block');
+  if (fb) fb.textContent = facts.join('\n');
+  if (ab) ab.textContent = assumptions.join('\n');
 }
 
 // ============================================================
