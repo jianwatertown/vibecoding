@@ -104,13 +104,6 @@ td { font-variant-numeric: tabular-nums; }
 
 .disclaimer { text-align: center; padding: 20px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 24px; }
 
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 500; align-items: center; justify-content: center; }
-.modal-overlay.show { display: flex; }
-.modal { background: var(--card); border-radius: var(--radius); padding: 24px; width: 400px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
-.modal h3 { margin-bottom: 16px; }
-.modal .scenario-list { list-style: none; }
-.modal .scenario-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.modal input[type=text] { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 5px; margin-bottom: 12px; font-size: 13px; }
 
 .readonly-calc { background: #f3f4f6 !important; }
 .sub-total { background: #eef2ff; border-radius: 4px; padding: 6px 10px; margin: 6px 0; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; }
@@ -164,15 +157,11 @@ td { font-variant-numeric: tabular-nums; }
 
 <!-- ==================== SCENARIO BAR ==================== -->
 <div class="scenario-bar no-print">
-  <label title="Pre-fill ALL inputs with pessimistic, realistic, or optimistic assumptions">Scenarios:</label>
-  <button class="btn" onclick="presetScenario('conservative')" title="Lower sale price, higher costs, slower growth">Conservative</button>
-  <button class="btn" onclick="presetScenario('base')" title="Most likely assumptions based on comps and Jeff's budget">Base</button>
-  <button class="btn" onclick="presetScenario('aggressive')" title="Higher sale price, lower costs, faster growth">Aggressive</button>
-  <span style="color:var(--border)">|</span>
-  <button class="btn" onclick="showSaveModal()">Save</button>
-  <button class="btn" onclick="showLoadModal()">Load</button>
-  <button class="btn" onclick="duplicateScenario()">Duplicate</button>
-  <button class="btn btn-red" onclick="resetAll()">Reset</button>
+  <label>Quick-fill assumptions:</label>
+  <button class="btn" onclick="presetScenario('conservative')" title="Lower sale price ($650/sf), higher costs, slower growth">Conservative</button>
+  <button class="btn" onclick="presetScenario('base')" title="Jeff's budget ($723/sf), mid costs, realistic growth">Base</button>
+  <button class="btn" onclick="presetScenario('aggressive')" title="Higher sale price ($795/sf), lower costs, faster growth">Aggressive</button>
+  <span style="font-size:11px;color:var(--muted);margin-left:4px">← fills all inputs at once</span>
 </div>
 
 <div class="main">
@@ -514,7 +503,7 @@ td { font-variant-numeric: tabular-nums; }
         </div>
       </div>
       <div class="field">
-        <label>Construction Timeline <span class="tip" data-tip="Project duration in months. Affects mortgage carry, interest, and IRR.">?</span></label>
+        <label>Sell Timeline <span class="tip" data-tip="Project duration in months. Affects mortgage carry, interest, and IRR.">?</span></label>
         <div class="input-wrap">
           <select id="s3-loan-months" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
             <option value="12">12 months (1 yr)</option>
@@ -626,11 +615,11 @@ td { font-variant-numeric: tabular-nums; }
     <h3>Wealth Over Time — When Does Each Option Win?</h3>
     <p style="font-size:12px;color:var(--muted);margin:-4px 0 12px">Shows projected total wealth for each option over time. Sell Now cash compounds at the risk-free rate. Rental builds equity through appreciation and cash flow. JV pays out at construction completion.</p>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-      <label style="font-size:12px;font-weight:600;color:var(--text)">Construction Timeline:</label>
+      <label style="font-size:12px;font-weight:600;color:var(--text)">Sell Timeline:</label>
       <div id="timeline-toggle" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden">
         <button class="tl-btn" data-months="12" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#f3f4f6;color:var(--text)">12 mo</button>
         <button class="tl-btn" data-months="18" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#f3f4f6;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border)">18 mo</button>
-        <button class="tl-btn active" data-months="24" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:var(--primary);color:white">24 mo</button>
+        <button class="tl-btn active" data-months="24" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:#2563eb;color:white;font-weight:600">24 mo</button>
       </div>
       <div id="timeline-impact" style="font-size:12px;color:var(--muted)"></div>
     </div>
@@ -872,26 +861,6 @@ td { font-variant-numeric: tabular-nums; }
 
 </div><!-- /main -->
 
-<!-- ==================== MODALS ==================== -->
-<div class="modal-overlay" id="modal-save">
-  <div class="modal">
-    <h3>Save Scenario</h3>
-    <input type="text" id="save-name" placeholder="Enter scenario name…">
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="closeModals()">Cancel</button>
-      <button class="btn btn-accent" onclick="doSave()">Save</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="modal-load">
-  <div class="modal">
-    <h3>Load Scenario</h3>
-    <ul class="scenario-list" id="scenario-list"></ul>
-    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="closeModals()">Close</button>
-    </div>
-  </div>
-</div>
 
 <div class="disclaimer">
   This calculator is for scenario planning only and is not legal, tax, or investment advice.
@@ -1994,80 +1963,6 @@ function toggleMode() {
 }
 
 // ============================================================
-//  SCENARIO MANAGEMENT
-// ============================================================
-function getAllInputIds() {
-  return [...document.querySelectorAll('input[id], select[id]')]
-    .filter(el => el.id.startsWith('s1-') || el.id.startsWith('s2-') || el.id.startsWith('s3-') || el.id.startsWith('risk-'))
-    .map(el => el.id);
-}
-
-function captureState() {
-  const state = {};
-  getAllInputIds().forEach(id => {
-    const el = $(id);
-    state[id] = el.value;
-  });
-  return state;
-}
-
-function restoreState(state) {
-  Object.entries(state).forEach(([id, val]) => {
-    const el = $(id);
-    if (el) el.value = val;
-  });
-  recalcAll();
-}
-
-function showSaveModal() { $('modal-save').classList.add('show'); $('save-name').value = ''; $('save-name').focus(); }
-function showLoadModal() {
-  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
-  const list = $('scenario-list');
-  const names = Object.keys(scenarios);
-  if (names.length === 0) {
-    list.innerHTML = '<li style="color:var(--muted)">No saved scenarios</li>';
-  } else {
-    list.innerHTML = names.map(n => `<li><span>${n}</span><div>
-      <button class="btn" onclick="doLoad('${n}')">Load</button>
-      <button class="btn btn-red" onclick="doDelete('${n}')">Delete</button>
-    </div></li>`).join('');
-  }
-  $('modal-load').classList.add('show');
-}
-function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show')); }
-
-function doSave() {
-  const name = $('save-name').value.trim();
-  if (!name) return;
-  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
-  scenarios[name] = captureState();
-  localStorage.setItem('prop-scenarios', JSON.stringify(scenarios));
-  closeModals();
-}
-
-function doLoad(name) {
-  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
-  if (scenarios[name]) restoreState(scenarios[name]);
-  closeModals();
-}
-
-function doDelete(name) {
-  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
-  delete scenarios[name];
-  localStorage.setItem('prop-scenarios', JSON.stringify(scenarios));
-  showLoadModal();
-}
-
-function duplicateScenario() {
-  const state = captureState();
-  const name = 'Scenario_' + new Date().toISOString().slice(0,16).replace('T','_');
-  const scenarios = JSON.parse(localStorage.getItem('prop-scenarios') || '{}');
-  scenarios[name] = state;
-  localStorage.setItem('prop-scenarios', JSON.stringify(scenarios));
-  alert('Duplicated as: ' + name);
-}
-
-// ============================================================
 //  PRESET SCENARIOS
 // ============================================================
 function presetScenario(type) {
@@ -2151,15 +2046,11 @@ function syncTimelineBtns() {
   const v = parseInt($('s3-loan-months').value);
   document.querySelectorAll('.tl-btn').forEach(btn => {
     const isActive = parseInt(btn.dataset.months) === v;
-    btn.style.background = isActive ? 'var(--primary)' : '#f3f4f6';
+    btn.style.background = isActive ? '#2563eb' : '#f3f4f6';
     btn.style.color = isActive ? 'white' : 'var(--text)';
+    btn.style.fontWeight = isActive ? '600' : '400';
     btn.classList.toggle('active', isActive);
   });
-}
-
-function resetAll() {
-  if (!confirm('Reset all fields to default values?')) return;
-  presetScenario('base');
 }
 
 // ============================================================
@@ -2343,9 +2234,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('s3-loan-months').addEventListener('change', syncTimelineBtns);
 
-  document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) closeModals(); });
-  });
 });
 </script>
 </body>
