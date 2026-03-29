@@ -1816,10 +1816,11 @@ function calcSensitivity() {
     const r = calcJVProject(psf, null, null);
     const diff = r.myNetCashAtSale - sellNowNet;
     const isBase = psf === baseSalePsf;
-    const beatsSP = r.myNetCashAtSale >= spAtJV;
-    const beatsSellNow = r.myNetCashAtSale >= sellNowNet;
+    const irrVal = r.irr || 0;
+    const beatsSP = irrVal >= spReturn;
+    const beatsSellNow = irrVal > 0;
     const cls = beatsSP ? 'cell-green' : beatsSellNow ? 'cell-yellow' : 'cell-red';
-    const verdict = beatsSP ? 'Beats S&P' : beatsSellNow ? 'Beats Sell Now' : 'Worse';
+    const verdict = beatsSP ? 'Beats S&P 11%' : beatsSellNow ? 'Beats Sell Now' : 'Worse';
     html += `<tr${isBase ? ' style="font-weight:700;background:#f0f4ff"' : ''}>
       <td>$${psf}/sf${isBase ? ' ★' : ''}</td>
       <td>${fmt(psf * sqft)}</td>
