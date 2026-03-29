@@ -164,10 +164,10 @@ td { font-variant-numeric: tabular-nums; }
 
 <!-- ==================== SCENARIO BAR ==================== -->
 <div class="scenario-bar no-print">
-  <label>Scenarios:</label>
-  <button class="btn" onclick="presetScenario('conservative')">Conservative</button>
-  <button class="btn" onclick="presetScenario('base')">Base</button>
-  <button class="btn" onclick="presetScenario('aggressive')">Aggressive</button>
+  <label title="Pre-fill ALL inputs with pessimistic, realistic, or optimistic assumptions">Scenarios:</label>
+  <button class="btn" onclick="presetScenario('conservative')" title="Lower sale price, higher costs, slower growth">Conservative</button>
+  <button class="btn" onclick="presetScenario('base')" title="Most likely assumptions based on comps and Jeff's budget">Base</button>
+  <button class="btn" onclick="presetScenario('aggressive')" title="Higher sale price, lower costs, faster growth">Aggressive</button>
   <span style="color:var(--border)">|</span>
   <button class="btn" onclick="showSaveModal()">Save</button>
   <button class="btn" onclick="showLoadModal()">Load</button>
@@ -1631,15 +1631,20 @@ function drawTimelineChart(o1, o2, o3) {
 
   const jvLowPsf = val('s3-sale-low-psf') || 638;
   const jvHighPsf = val('s3-sale-high-psf') || 920;
+  const sqft = val('s3-building-sqft') || 4700;
   const jvLow = calcJVProject(jvLowPsf, null, null);
   const jvHigh = calcJVProject(jvHighPsf, null, null);
   const jvLowCash = jvLow.myNetCashAtSale || 0;
   const jvHighCash = jvHigh.myNetCashAtSale || 0;
   const jvBaseCash = o3.myNetCashAtSale || 0;
 
+  const jvTickPsfs = [650, 700, 750, 800, 850, 900].filter(p => p > jvLowPsf && p < jvHighPsf);
+  const jvTickResults = jvTickPsfs.map(psf => ({ psf, cash: calcJVProject(psf, null, null).myNetCashAtSale || 0, salePrice: psf * sqft }));
+
   const steps = maxYears * 4;
   const sellNowLine = [], spLine = [], rentalLine = [];
   const jvLowLine = [], jvHighLine = [], jvBaseLine = [];
+  const jvTickLines = jvTickResults.map(() => []);
 
   rentalLine.push({ t: 0, v: sellNowCash });
 
@@ -1662,7 +1667,13 @@ function drawTimelineChart(o1, o2, o3) {
     }
 
     const mortPmt = o3.mortgagePmt || 0;
-    [{ line: jvLowLine, cash: jvLowCash }, { line: jvHighLine, cash: jvHighCash }, { line: jvBaseLine, cash: jvBaseCash }].forEach(({ line, cash }) => {
+    const allJvSets = [
+      { line: jvLowLine, cash: jvLowCash },
+      { line: jvHighLine, cash: jvHighCash },
+      { line: jvBaseLine, cash: jvBaseCash },
+      ...jvTickResults.map((tr, idx) => ({ line: jvTickLines[idx], cash: tr.cash }))
+    ];
+    allJvSets.forEach(({ line, cash }) => {
       if (t <= jvYear) {
         line.push({ t, v: sellNowCash - mortPmt * t * 12 });
       } else {
@@ -1738,12 +1749,23 @@ function drawTimelineChart(o1, o2, o3) {
     <text x="${padL+320}" y="${ly+4}" font-size="9" fill="#8b5cf6">JV Range ($${jvLowPsf}–$${jvHighPsf}/sf)</text>
   `;
 
+  // Subtle tick lines inside JV band with labels at the JV sale vertical line
+  let jvTickSvg = '';
+  jvTickResults.forEach((tr, idx) => {
+    jvTickSvg += `<path d="${pathD(jvTickLines[idx])}" fill="none" stroke="#8b5cf6" stroke-width="0.7" opacity="0.4" stroke-dasharray="2,3"/>`;
+    const yAtSale = ty(tr.cash);
+    const saleM = (tr.salePrice / 1e6).toFixed(1);
+    jvTickSvg += `<text x="${jvX + 6}" y="${yAtSale + 3}" font-size="8" fill="#7c3aed" opacity="0.7">$${tr.psf} ($${saleM}M)</text>`;
+    jvTickSvg += `<circle cx="${jvX}" cy="${yAtSale}" r="2" fill="#8b5cf6" opacity="0.5"/>`;
+  });
+
   container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="max-width:${w}px;width:100%">
     ${gridLines}
     ${jvMarker}
-    <path d="${areaD(jvHighLine, jvLowLine)}" fill="#8b5cf6" opacity="0.15"/>
+    <path d="${areaD(jvHighLine, jvLowLine)}" fill="#8b5cf6" opacity="0.12"/>
     <path d="${pathD(jvHighLine)}" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.5"/>
     <path d="${pathD(jvLowLine)}" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.5"/>
+    ${jvTickSvg}
     <path d="${pathD(jvBaseLine)}" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6,3"/>
     <path d="${pathD(sellNowLine)}" fill="none" stroke="#2563eb" stroke-width="2.5"/>
     <path d="${pathD(spLine)}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
