@@ -1687,7 +1687,7 @@ function drawTimelineChart(o1, o2, o3) {
   const maxVal = Math.max(...allVals) * 1.05;
   const valRange = maxVal - minVal || 1;
 
-  const w = 720, h = 360, padL = 80, padR = 70, padT = 30, padB = 60;
+  const w = 720, h = 340, padL = 80, padR = 140, padT = 30, padB = 40;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -1729,25 +1729,27 @@ function drawTimelineChart(o1, o2, o3) {
   const jvHighEnd = jvHighLine[jvHighLine.length - 1];
   const jvLowEnd = jvLowLine[jvLowLine.length - 1];
 
-  const endLabels = `
-    <text x="${w - padR + 4}" y="${ty(sellEnd.v) + 4}" font-size="9" fill="#2563eb" font-weight="600">${fmt(sellEnd.v)}</text>
-    <text x="${w - padR + 4}" y="${ty(spEnd.v) + 4}" font-size="9" fill="#f59e0b" font-weight="600">${fmt(spEnd.v)}</text>
-    <text x="${w - padR + 4}" y="${ty(rentEnd.v) + 4}" font-size="9" fill="#16a34a" font-weight="600">${fmt(rentEnd.v)}</text>
-    <text x="${w - padR + 4}" y="${ty(jvHighEnd.v) - 2}" font-size="8" fill="#8b5cf6">$${jvHighPsf}/sf</text>
-    <text x="${w - padR + 4}" y="${ty(jvLowEnd.v) + 10}" font-size="8" fill="#8b5cf6">$${jvLowPsf}/sf</text>
-  `;
-
-  const ly = h - 14;
-  const legend = `
-    <line x1="${padL}" y1="${ly}" x2="${padL+16}" y2="${ly}" stroke="#2563eb" stroke-width="2"/>
-    <text x="${padL+20}" y="${ly+4}" font-size="9" fill="#2563eb">Risk-Free ${fmtPct(riskFree)}</text>
-    <line x1="${padL+110}" y1="${ly}" x2="${padL+126}" y2="${ly}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
-    <text x="${padL+130}" y="${ly+4}" font-size="9" fill="#f59e0b">S&P 500 (11%)</text>
-    <line x1="${padL+230}" y1="${ly}" x2="${padL+246}" y2="${ly}" stroke="#16a34a" stroke-width="2"/>
-    <text x="${padL+250}" y="${ly+4}" font-size="9" fill="#16a34a">Rental</text>
-    <rect x="${padL+300}" y="${ly-5}" width="16" height="10" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="1"/>
-    <text x="${padL+320}" y="${ly+4}" font-size="9" fill="#8b5cf6">JV Range ($${jvLowPsf}–$${jvHighPsf}/sf)</text>
-  `;
+  const rx = w - padR + 6;
+  const rightLegend = [
+    { y: ty(spEnd.v), color: '#f59e0b', label: `S&P 11%`, val: fmt(spEnd.v), dash: '4,2' },
+    { y: ty(rentEnd.v), color: '#16a34a', label: `Rental`, val: fmt(rentEnd.v) },
+    { y: ty(sellEnd.v), color: '#2563eb', label: `Risk-Free ${fmtPct(riskFree)}`, val: fmt(sellEnd.v) },
+    { y: ty(jvHighEnd.v), color: '#8b5cf6', label: `JV $${jvHighPsf}/sf`, val: '', opacity: 0.6 },
+    { y: ty(jvLowEnd.v), color: '#8b5cf6', label: `JV $${jvLowPsf}/sf`, val: '', opacity: 0.6 },
+  ];
+  // Prevent label overlap by ensuring minimum 12px vertical gap
+  rightLegend.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < rightLegend.length; i++) {
+    if (rightLegend[i].y - rightLegend[i-1].y < 12) rightLegend[i].y = rightLegend[i-1].y + 12;
+  }
+  let endLabels = '';
+  rightLegend.forEach(item => {
+    const op = item.opacity || 1;
+    endLabels += `<line x1="${w - padR - 4}" y1="${item.y}" x2="${rx - 2}" y2="${item.y}" stroke="${item.color}" stroke-width="1.5" opacity="${op}"${item.dash ? ` stroke-dasharray="${item.dash}"` : ''}/>`;
+    endLabels += `<text x="${rx}" y="${item.y + 3}" font-size="8.5" fill="${item.color}" opacity="${op}">${item.label}</text>`;
+    if (item.val) endLabels += `<text x="${rx}" y="${item.y + 13}" font-size="9" fill="${item.color}" font-weight="700">${item.val}</text>`;
+  });
+  const legend = '';
 
   // Subtle tick lines inside JV band with labels at the JV sale vertical line
   let jvTickSvg = '';
