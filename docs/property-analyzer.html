@@ -94,30 +94,13 @@ td { font-variant-numeric: tabular-nums; }
 .sens-table .cell-red { background: var(--red-bg); }
 .sens-table .cell-base { font-weight: 700; outline: 2px solid var(--accent); }
 
-.risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.risk-card { text-align: center; }
-.risk-card h4 { margin-bottom: 12px; }
-.risk-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; }
-.risk-row select { width: 60px; }
-.risk-score { font-size: 32px; font-weight: 800; margin: 10px 0 4px; }
-.risk-label { font-size: 12px; color: var(--muted); }
 
-.rec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
-.rec-card { padding: 14px; border-radius: var(--radius); border-left: 4px solid; }
-.rec-card.green { border-color: var(--green); background: var(--green-bg); }
-.rec-card.yellow { border-color: var(--yellow); background: var(--yellow-bg); }
-.rec-card.red { border-color: var(--red); background: var(--red-bg); }
-.rec-card .rec-title { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .4px; }
-.rec-card .rec-value { font-size: 16px; font-weight: 700; margin-top: 2px; }
-.rec-card .rec-detail { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
 .decision-box { background: #f0f4ff; border: 1px solid #c7d7fe; border-radius: var(--radius); padding: 16px 20px; margin-top: 20px; }
 .decision-box h4 { color: var(--accent); margin-bottom: 10px; }
 .decision-box p { font-size: 13px; margin-bottom: 6px; line-height: 1.6; }
 .decision-box strong { color: var(--text); }
 
-.chart-container { margin-top: 16px; }
-.chart-container svg { width: 100%; height: auto; }
 
 .disclaimer { text-align: center; padding: 20px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 24px; }
 
@@ -136,7 +119,6 @@ td { font-variant-numeric: tabular-nums; }
 
 @media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }
-  .risk-grid { grid-template-columns: 1fr; }
   .result-grid { grid-template-columns: 1fr; }
   .header { flex-direction: column; align-items: flex-start; }
   .header-controls { margin-left: 0; }
@@ -146,8 +128,8 @@ td { font-variant-numeric: tabular-nums; }
 @media print {
   .nav, .scenario-bar, .header-controls, .mode-toggle, .btn, .no-print { display: none !important; }
   .section { display: block !important; page-break-inside: avoid; margin-bottom: 24px; }
-  .section:not(#sec-compare):not(#sec-risk) { display: none !important; }
-  #sec-compare, #sec-risk { display: block !important; }
+  .section:not(#sec-compare) { display: none !important; }
+  #sec-compare { display: block !important; }
   body { background: #fff; font-size: 12px; }
   .card { box-shadow: none; border: 1px solid #ccc; }
   .header { background: #fff; color: #000; border-bottom: 2px solid #000; }
@@ -176,7 +158,6 @@ td { font-variant-numeric: tabular-nums; }
   <button onclick="switchTab('opt2')">2. Rental</button>
   <button onclick="switchTab('opt3')">3. JV Redevelopment</button>
   <button onclick="switchTab('compare')">Compare</button>
-  <button onclick="switchTab('risk')">Risk</button>
   <button onclick="switchTab('sensitivity')">Sensitivity</button>
   <button onclick="switchTab('formulas')">Formulas</button>
 </div>
@@ -636,28 +617,13 @@ td { font-variant-numeric: tabular-nums; }
     <div style="overflow-x:auto"><table class="compare-table" id="tbl-compare"><thead></thead><tbody></tbody></table></div>
   </div>
   <div class="card" style="margin-top:20px">
-    <h3>Recommendations</h3>
-    <div class="rec-grid" id="rec-grid"></div>
-  </div>
-  <div class="card" style="margin-top:20px">
-    <h3>Visual Comparison</h3>
-    <div class="chart-container" id="chart-container"></div>
+    <h3>Wealth Over Time — When Does Each Option Win?</h3>
+    <p style="font-size:12px;color:var(--muted);margin:-4px 0 12px">Shows projected total wealth for each option over time. Sell Now cash compounds at the risk-free rate. Rental builds equity through appreciation and cash flow. JV pays out at construction completion.</p>
+    <div id="timeline-chart" style="overflow-x:auto"></div>
   </div>
   <div class="decision-box" id="decision-box">
     <h4>Decision Summary</h4>
     <div id="decision-content"></div>
-  </div>
-</div>
-
-<!-- ===================== RISK ===================== -->
-<div class="section" id="sec-risk">
-  <div class="card">
-    <h3>Risk Assessment (Rate 1–5: 1 = Low, 5 = High)</h3>
-    <div class="risk-grid" id="risk-grid"></div>
-  </div>
-  <div class="card" style="margin-top:20px">
-    <h3>Risk-Adjusted Attractiveness</h3>
-    <div class="result-grid" id="risk-adjusted-grid"></div>
   </div>
 </div>
 
@@ -1397,8 +1363,9 @@ function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
   const myAnnReturn = totalYears > 0 && myContribution > 0 ?
     Math.pow(Math.max(0, myNetAfterTax / myContribution), 1 / totalYears) - 1 : 0;
 
-  const investorAnnReturn = totalYears > 0 && cashInvest > 0 ?
-    grossProfit / cashInvest / totalYears : 0;
+  // Jeff's project-level return: gross profit ÷ total project cost, annualized
+  const jeffProjectReturn = totalYears > 0 && totalProjectCost > 0 ?
+    grossProfit / totalProjectCost / totalYears : 0;
 
   // IRR using sell-now net cash as opportunity cost + mortgage payments during construction
   const sellNowNet = R.opt1.netCash || 0;
@@ -1429,7 +1396,7 @@ function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
     loanAmount, loanClosing, interestCarry,
     cashInvest, cashAfterLand, ltc,
     saleBase, salePsf, sellingCosts, netSaleProceeds, grossProfit,
-    totalROI, totalROE, investorAnnReturn,
+    totalROI, totalROE, jeffProjectReturn,
     totalCapitalIn: myContribution + devContribution,
     myPayout, devPayout, waterfallSteps, myProfit: myProfitAmt, myTax, myNetAfterTax, myNetCashAtSale,
     totalMonths, myROI, myAnnReturn, irr, initialEquity, jvNpv, riskFreeRate,
@@ -1499,7 +1466,8 @@ function calcOption3() {
         <div class="result-item"><div class="r-label">Incremental vs Sell Now</div><div class="r-value ${colorClass(base.myNetCashAtSale - R.opt1.netCash)}">${fmt(base.myNetCashAtSale - R.opt1.netCash)}</div></div>
         <div class="result-item"><div class="r-label">Developer Payout</div><div class="r-value">${fmt(base.devPayout)}</div></div>
         <div class="result-item"><div class="r-label">Timeline</div><div class="r-value">${base.totalMonths} months (${jvTotalYears.toFixed(1)} yrs)</div></div>
-        <div class="result-item full" style="background:#fffbeb;border:1px solid #fde68a"><div class="r-label">Jeff's Simple Annualized Return <span class="tip" data-tip="(Payout ÷ Land Equity)^(12÷months) − 1. This is how Jeff's Excel calculates return — on land equity only, ignoring opportunity cost and mortgage payments. Compare with IRR above.">?</span></div><div class="r-value">${fmtPct(base.myAnnReturn)}</div></div>
+        <div class="result-item" style="background:#fffbeb;border:1px solid #fde68a"><div class="r-label">Jeff's Project Return <span class="tip" data-tip="Gross Profit ÷ Total Project Cost ÷ Years. This is how Jeff's Excel calculates return — at the project level, without considering your opportunity cost or mortgage payments.">?</span></div><div class="r-value">${fmtPct(base.jeffProjectReturn)}</div></div>
+        <div class="result-item" style="background:#fffbeb;border:1px solid #fde68a"><div class="r-label">My Return on Land Equity <span class="tip" data-tip="(Net Payout ÷ Land Equity)^(12÷months) − 1. Ignores opportunity cost of selling. Compare with IRR above for the full picture.">?</span></div><div class="r-value">${fmtPct(base.myAnnReturn)}</div></div>
       </div>
     </div>
 
@@ -1582,10 +1550,6 @@ function calcComparison() {
   const opt2Cash = o2.totalNetWorth || 0;
   const opt3Cash = o3.myNetCashAtSale || 0;
 
-  const opt1ROI = o1.netCash && o1.price ? (o1.netCash / (o1.price - o1.netCash)) : 0;
-  const opt2ROI = o2.irr || 0;
-  const opt3ROI = o3.myROI || 0;
-
   const opt2Ann = o2.irr || 0;
   const opt3Ann = o3.irr || o3.myAnnReturn || 0;
 
@@ -1602,7 +1566,7 @@ function calcComparison() {
   ];
 
   const tbl = $('tbl-compare');
-  let html = '<thead><tr><th>Metric</th><th>Option 1: Sell Now</th><th>Option 2: Rental</th><th>Option 3: JV Redevelopment</th></tr></thead><tbody>';
+  let html = '<thead><tr><th>Metric</th><th>Sell Now</th><th>Keep as Rental</th><th>JV Redevelopment</th></tr></thead><tbody>';
   rows.forEach(r => {
     let cells = '';
     if (r.metric === 'Net Cash / Wealth to Me') {
@@ -1620,128 +1584,140 @@ function calcComparison() {
   html += '</tbody>';
   tbl.innerHTML = html;
 
-  const cashValues = [
-    { name: 'Sell Now', val: opt1Cash },
-    { name: 'Rental', val: opt2Cash },
-    { name: 'JV Redevelopment', val: opt3Cash }
-  ];
-  const highestCash = cashValues.reduce((a, b) => b.val > a.val ? b : a);
-
-  const annValues = [
-    { name: 'Sell Now', val: 0 },
-    { name: 'Rental', val: opt2Ann },
-    { name: 'JV Redevelopment', val: opt3Ann }
-  ];
-  const highestAnn = annValues.reduce((a, b) => b.val > a.val ? b : a);
-
-  $('rec-grid').innerHTML = `
-    <div class="rec-card green">
-      <div class="rec-title">Highest Net Cash</div>
-      <div class="rec-value">${highestCash.name}</div>
-      <div class="rec-detail">${fmt(highestCash.val)}</div>
-    </div>
-    <div class="rec-card ${highestAnn.val > 0.08 ? 'green' : highestAnn.val > 0 ? 'yellow' : 'red'}">
-      <div class="rec-title">Highest Annualized Return</div>
-      <div class="rec-value">${highestAnn.name}</div>
-      <div class="rec-detail">${fmtPct(highestAnn.val)}</div>
-    </div>
-    <div class="rec-card yellow">
-      <div class="rec-title">Highest Risk</div>
-      <div class="rec-value">JV Redevelopment</div>
-      <div class="rec-detail">Most assumptions, longest timeline</div>
-    </div>
-    <div class="rec-card yellow">
-      <div class="rec-title">Lowest Risk</div>
-      <div class="rec-value">Sell Now</div>
-      <div class="rec-detail">Immediate certainty, no execution risk</div>
-    </div>
-  `;
-
-  drawChart(opt1Cash, opt2Cash, opt3Cash);
+  drawTimelineChart(o1, o2, o3);
 
   const o3Incremental = opt3Cash - opt1Cash;
+  const jvMonth = o3.totalMonths || 14;
+  const jvYear = jvMonth / 12;
+  const riskFree = (val('s2-risk-free') || 4) / 100;
+
+  const sellNowAtJV = opt1Cash * Math.pow(1 + riskFree, jvYear);
+  const jvBeatsSellNow = opt3Cash > sellNowAtJV;
+  const sellNowAtRental = opt1Cash * Math.pow(1 + riskFree, opt2Time);
+  const rentalBeatsSellNow = opt2Cash > sellNowAtRental;
+
   $('decision-content').innerHTML = `
-    <p><strong>Sell Now is best if…</strong> you need immediate liquidity, want certainty, or believe the market may decline. You lock in ${fmt(opt1Cash)} today with no further risk.</p>
-    <p><strong>Hold as Rental is best if…</strong> you believe in long-term appreciation (${fmtPct(val('s2-appreciation')/100)}/yr), can tolerate ${fmt(o2.annualCF || 0)}/yr cash flow, and want ${fmt(opt2Cash)} total wealth over ${o2.holdYears} years.</p>
-    <p><strong>JV Redevelopment is best if…</strong> the finished sale price exceeds the break-even point, you trust the developer, and the ${fmt(o3Incremental)} incremental upside (base case) justifies ${(o3.totalMonths||0)} months of illiquidity and execution risk.</p>
+    <p><strong>Sell Now</strong> gives you ${fmt(opt1Cash)} today with zero risk. At ${fmtPct(riskFree)} risk-free, this grows to ${fmt(sellNowAtJV)} by month ${jvMonth} and ${fmt(sellNowAtRental)} by year ${opt2Time.toFixed(0)}.</p>
+    <p><strong>Keep as Rental</strong> builds to ${fmt(opt2Cash)} over ${opt2Time.toFixed(0)} years (IRR ${fmtPct(opt2Ann)}). ${rentalBeatsSellNow ? 'This beats selling now and investing at the risk-free rate.' : 'This trails selling now and investing at the risk-free rate.'}</p>
+    <p><strong>JV Redevelopment</strong> yields ${fmt(opt3Cash)} at month ${jvMonth} (IRR ${fmtPct(opt3Ann)}). ${jvBeatsSellNow ? 'This beats selling now' : 'This trails selling now'} by ${fmt(Math.abs(opt3Cash - sellNowAtJV))} at that point. ${opt3Ann > opt2Ann ? 'Higher IRR than rental but concentrated in a shorter, riskier window.' : 'Lower IRR than rental — the rental path is more attractive on a risk-adjusted basis.'}</p>
   `;
 }
 
 // ============================================================
-//  SVG BAR CHART
+//  TIMELINE WEALTH CHART (SVG)
 // ============================================================
-function drawChart(v1, v2, v3) {
-  const container = $('chart-container');
-  const maxVal = Math.max(Math.abs(v1), Math.abs(v2), Math.abs(v3), 1);
-  const w = 600, h = 200, pad = 60, barW = 100, gap = 60;
-  const colors = ['#2563eb', '#16a34a', '#8b5cf6'];
-  const labels = ['Sell Now', 'Rental', 'JV Redev'];
-  const values = [v1, v2, v3];
+function drawTimelineChart(o1, o2, o3) {
+  const container = $('timeline-chart');
+  const riskFree = (val('s2-risk-free') || 4) / 100;
+  const appreciation = (val('s2-appreciation') || 2) / 100;
+  const holdYears = o2.holdYears || 5;
+  const jvMonths = o3.totalMonths || 14;
+  const jvYear = jvMonths / 12;
+  const maxYears = Math.max(holdYears, Math.ceil(jvYear) + 1);
 
-  let bars = '';
-  values.forEach((v, i) => {
-    const x = pad + i * (barW + gap);
-    const barH = Math.abs(v) / maxVal * (h - 50);
-    const y = v >= 0 ? (h - 30 - barH) : (h - 30);
-    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${colors[i]}" rx="4"/>`;
-    bars += `<text x="${x + barW/2}" y="${y - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${colors[i]}">${fmt(v)}</text>`;
-    bars += `<text x="${x + barW/2}" y="${h - 10}" text-anchor="middle" font-size="11" fill="#6b7280">${labels[i]}</text>`;
-  });
+  const sellNowCash = o1.netCash || 0;
+  const jvCash = o3.myNetCashAtSale || 0;
 
-  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="max-width:${w}px">
-    <line x1="${pad-10}" y1="${h-30}" x2="${w}" y2="${h-30}" stroke="#dde1e6" stroke-width="1"/>
-    ${bars}
+  const steps = maxYears * 4;
+  const sellNowLine = [];
+  const rentalLine = [];
+  const jvLine = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * maxYears;
+    sellNowLine.push({ t, v: sellNowCash * Math.pow(1 + riskFree, t) });
+
+    if (t <= holdYears && o2.yearlyData) {
+      const yr = Math.floor(t);
+      const frac = t - yr;
+      const currEquity = yr < o2.yearlyData.length ? o2.yearlyData[yr].equity : (o2.yearlyData[o2.yearlyData.length-1]?.equity || 0);
+      const nextEquity = (yr + 1) < o2.yearlyData.length ? o2.yearlyData[yr + 1].equity : currEquity * (1 + appreciation);
+      const interpEquity = currEquity + (nextEquity - currEquity) * frac;
+      const cumCF = o2.yearlyData.slice(0, yr + 1).reduce((s, d) => s + d.annualCF, 0);
+      rentalLine.push({ t, v: interpEquity + cumCF });
+    } else if (t <= holdYears) {
+      rentalLine.push({ t, v: sellNowCash });
+    }
+
+    if (t < jvYear) {
+      const monthsSoFar = t * 12;
+      const mortgagePaid = (o3.mortgagePmt || 0) * monthsSoFar;
+      jvLine.push({ t, v: -mortgagePaid });
+    } else {
+      const mortgagePaid = (o3.mortgagePmt || 0) * jvMonths;
+      jvLine.push({ t, v: jvCash - mortgagePaid + (jvCash * riskFree * (t - jvYear)) });
+    }
+  }
+
+  const allVals = [...sellNowLine, ...rentalLine, ...jvLine].map(p => p.v);
+  const minVal = Math.min(...allVals) * 0.95;
+  const maxVal = Math.max(...allVals) * 1.05;
+
+  const w = 700, h = 320, padL = 80, padR = 20, padT = 30, padB = 50;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  function tx(t) { return padL + (t / maxYears) * plotW; }
+  function ty(v) { return padT + plotH - ((v - minVal) / (maxVal - minVal)) * plotH; }
+
+  function pathD(pts) {
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${tx(p.t).toFixed(1)},${ty(p.v).toFixed(1)}`).join(' ');
+  }
+
+  let gridLines = '';
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = minVal + (maxVal - minVal) * (i / yTicks);
+    const y = ty(v);
+    gridLines += `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+    gridLines += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#9ca3af">$${(v/1000).toFixed(0)}K</text>`;
+  }
+  for (let yr = 0; yr <= maxYears; yr++) {
+    const x = tx(yr);
+    gridLines += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${h - padB}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+    gridLines += `<text x="${x}" y="${h - padB + 16}" text-anchor="middle" font-size="10" fill="#9ca3af">Yr ${yr}</text>`;
+  }
+
+  const jvX = tx(jvYear);
+  const jvMarker = `<line x1="${jvX}" y1="${padT}" x2="${jvX}" y2="${h - padB}" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="${jvX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="#8b5cf6">JV Sale (mo ${jvMonths})</text>`;
+
+  const jvDotY = ty(jvCash);
+  const sellDotY = ty(sellNowCash * Math.pow(1 + riskFree, jvYear));
+  const rentalPt = rentalLine.find(p => p.t >= jvYear) || rentalLine[rentalLine.length - 1];
+  const rentalDotY = rentalPt ? ty(rentalPt.v) : 0;
+
+  const dots = `
+    <circle cx="${jvX}" cy="${jvDotY}" r="5" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+    <text x="${jvX + 8}" y="${jvDotY + 4}" font-size="10" fill="#8b5cf6" font-weight="600">${fmt(jvCash)}</text>
+    <circle cx="${jvX}" cy="${sellDotY}" r="4" fill="#2563eb" stroke="white" stroke-width="2"/>
+    <circle cx="${jvX}" cy="${rentalDotY}" r="4" fill="#16a34a" stroke="white" stroke-width="2"/>
+  `;
+
+  const endLabels = `
+    <text x="${w - padR + 4}" y="${ty(sellNowLine[sellNowLine.length-1].v) + 4}" font-size="10" fill="#2563eb" font-weight="600">${fmt(sellNowLine[sellNowLine.length-1].v)}</text>
+    <text x="${w - padR + 4}" y="${ty(rentalLine[rentalLine.length-1].v) + 4}" font-size="10" fill="#16a34a" font-weight="600">${fmt(rentalLine[rentalLine.length-1].v)}</text>
+  `;
+
+  const legend = `
+    <line x1="${padL}" y1="${h - 10}" x2="${padL + 20}" y2="${h - 10}" stroke="#2563eb" stroke-width="2.5"/>
+    <text x="${padL + 24}" y="${h - 6}" font-size="10" fill="#2563eb">Sell Now (at risk-free ${fmtPct(riskFree)})</text>
+    <line x1="${padL + 190}" y1="${h - 10}" x2="${padL + 210}" y2="${h - 10}" stroke="#16a34a" stroke-width="2.5"/>
+    <text x="${padL + 214}" y="${h - 6}" font-size="10" fill="#16a34a">Keep as Rental</text>
+    <line x1="${padL + 330}" y1="${h - 10}" x2="${padL + 350}" y2="${h - 10}" stroke="#8b5cf6" stroke-width="2.5"/>
+    <text x="${padL + 354}" y="${h - 6}" font-size="10" fill="#8b5cf6">JV Redevelopment</text>
+  `;
+
+  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="max-width:${w}px;width:100%">
+    ${gridLines}
+    ${jvMarker}
+    <path d="${pathD(sellNowLine)}" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+    <path d="${pathD(rentalLine)}" fill="none" stroke="#16a34a" stroke-width="2.5"/>
+    <path d="${pathD(jvLine)}" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="6,3"/>
+    ${dots}
+    ${endLabels}
+    ${legend}
   </svg>`;
-}
-
-// ============================================================
-//  RISK ASSESSMENT
-// ============================================================
-const RISK_DIMS = ['Complexity', 'Execution Risk', 'Market Risk', 'Time Risk', 'Liquidity', 'Personal Involvement'];
-const OPTION_NAMES = ['Sell Now', 'Rental', 'JV Redevelopment'];
-const RISK_DEFAULTS = {
-  'Sell Now': [1, 1, 2, 1, 5, 2],
-  'Rental': [2, 2, 3, 3, 2, 3],
-  'JV Redevelopment': [5, 4, 4, 4, 1, 3]
-};
-
-function initRisk() {
-  const grid = $('risk-grid');
-  grid.innerHTML = '';
-  OPTION_NAMES.forEach((opt, oi) => {
-    let rows = RISK_DIMS.map((dim, di) => {
-      const id = `risk-${oi}-${di}`;
-      const def = RISK_DEFAULTS[opt][di];
-      const opts = [1,2,3,4,5].map(v => `<option value="${v}" ${v===def?'selected':''}>${v}</option>`).join('');
-      return `<div class="risk-row"><span>${dim}</span><select id="${id}" onchange="calcRisk()">${opts}</select></div>`;
-    }).join('');
-    grid.innerHTML += `<div class="card risk-card"><h4>${opt}</h4>${rows}<div class="risk-score" id="rscore-${oi}">0</div><div class="risk-label">Avg Risk Score</div></div>`;
-  });
-}
-
-function calcRisk() {
-  const scores = [];
-  OPTION_NAMES.forEach((opt, oi) => {
-    let sum = 0;
-    RISK_DIMS.forEach((_, di) => { sum += parseInt($(`risk-${oi}-${di}`).value) || 3; });
-    const avg = sum / RISK_DIMS.length;
-    scores.push(avg);
-    const el = $(`rscore-${oi}`);
-    el.textContent = avg.toFixed(1);
-    el.style.color = avg <= 2 ? 'var(--green)' : avg <= 3.5 ? 'var(--yellow)' : 'var(--red)';
-  });
-
-  const profits = [R.opt1.netCash || 0, R.opt2.totalNetWorth || 0, R.opt3.myNetAfterTax || 0];
-  const adjusted = profits.map((p, i) => scores[i] > 0 ? p / scores[i] : 0);
-  const maxAdj = Math.max(...adjusted);
-
-  $('risk-adjusted-grid').innerHTML = OPTION_NAMES.map((name, i) => {
-    const isBest = adjusted[i] === maxAdj && maxAdj > 0;
-    return `<div class="result-item ${isBest ? 'highlight' : ''}">
-      <div class="r-label">${name}</div>
-      <div class="r-value">${fmt(adjusted[i])}<span style="font-size:11px;color:var(--muted);margin-left:6px">profit per risk point</span></div>
-    </div>`;
-  }).join('');
 }
 
 // ============================================================
@@ -1844,7 +1820,7 @@ function switchTab(tab) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   $('sec-' + tab).classList.add('active');
-  const tabs = ['opt1','opt2','opt3','compare','risk','sensitivity','formulas'];
+  const tabs = ['opt1','opt2','opt3','compare','sensitivity','formulas'];
   const idx = tabs.indexOf(tab);
   if (idx >= 0) document.querySelectorAll('.nav button')[idx].classList.add('active');
 }
@@ -2061,7 +2037,6 @@ function recalcAll() {
   calcOption2();
   calcOption3();
   calcComparison();
-  calcRisk();
   calcSensitivity();
 }
 
@@ -2069,7 +2044,6 @@ function recalcAll() {
 //  INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  initRisk();
   recalcAll();
 
   document.querySelectorAll('input, select').forEach(el => {
