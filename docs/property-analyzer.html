@@ -627,13 +627,9 @@ td { font-variant-numeric: tabular-nums; }
 <!-- ===================== SENSITIVITY ===================== -->
 <div class="section" id="sec-sensitivity">
   <div class="card">
-    <h3>JV Break-Even vs. Selling Now</h3>
-    <div class="result-grid" id="res-breakeven"></div>
-  </div>
-  <div class="card" style="margin-top:20px">
-    <h3>JV Outcomes by Sale $/sqft</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">How your JV net cash and IRR change as the finished sale price varies. Green = beats selling now. Red = worse.</p>
-    <div style="overflow-x:auto"><table class="sens-table" id="tbl-sens-psf"><thead></thead><tbody></tbody></table></div>
+    <h3>JV Outcome Matrix — Timeline × Sale Price → IRR</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">The two things that matter most: <strong>when</strong> you sell and <strong>at what price</strong>. Each cell shows your annualized IRR. Green = beats S&P (11%). Yellow = beats sell-now. Red = worse than selling now.</p>
+    <div style="overflow-x:auto" id="sensitivity-matrix"></div>
   </div>
 </div>
 
@@ -1846,55 +1842,71 @@ function drawTimelineChart(o1, o2, o3) {
 // ============================================================
 function calcSensitivity() {
   const baseSalePsf = val('s3-sale-psf');
-  const baseConstPsf = val('s3-construction-psf');
-  const sellNowNet = R.opt1.netCash || 0;
+  const baseMonths = val('s3-loan-months');
   const sqft = val('s3-building-sqft');
   const spReturn = 0.11;
-  const jvYear = (R.opt3.totalMonths || 24) / 12;
-  const spAtJV = sellNowNet * Math.pow(1 + spReturn, jvYear);
 
-  // Break-even
-  let beSalePsf = 0;
-  for (let psf = 400; psf <= 1200; psf += 5) {
-    const r = calcJVProject(psf, null, null);
-    if (r.myNetCashAtSale >= sellNowNet) { beSalePsf = psf; break; }
-  }
-  let beSPPsf = 0;
-  for (let psf = 400; psf <= 1200; psf += 5) {
-    const r = calcJVProject(psf, null, null);
-    if (r.myNetCashAtSale >= spAtJV) { beSPPsf = psf; break; }
-  }
+  const timelines = [10, 12, 14, 16, 18, 20, 24, 30];
+  const psfValues = [600, 650, 700, 723, 750, 800, 850, 900, 1000];
 
-  $('res-breakeven').innerHTML = `
-    <div class="result-item highlight"><div class="r-label">Break-Even vs Sell Now <span class="tip" data-tip="Min $/sqft where JV net cash ≥ sell-now net cash">?</span></div><div class="r-value">$${beSalePsf}/sf → ${fmt(beSalePsf * sqft)}</div></div>
-    <div class="result-item"><div class="r-label">Break-Even vs S&P 500 (11%) <span class="tip" data-tip="Min $/sqft where JV beats selling now and investing in S&P for ${(jvYear).toFixed(1)} yrs">?</span></div><div class="r-value">$${beSPPsf}/sf → ${fmt(beSPPsf * sqft)}</div></div>
-    <div class="result-item"><div class="r-label">Sell Now Baseline</div><div class="r-value">${fmt(sellNowNet)}</div></div>
-    <div class="result-item"><div class="r-label">S&P Benchmark (${(jvYear).toFixed(1)} yrs)</div><div class="r-value">${fmt(spAtJV)}</div></div>
-  `;
-
-  // Single table: JV outcomes at various sale $/sqft
-  const psfValues = [550, 600, 638, 680, 723, 770, 800, 850, 900, 950, 1000];
-  let html = `<thead><tr><th>Sale $/sf</th><th>Sale Price</th><th>My Net Cash</th><th>vs Sell Now</th><th>IRR</th><th>Verdict</th></tr></thead><tbody>`;
-  psfValues.forEach(psf => {
-    const r = calcJVProject(psf, null, null);
-    const diff = r.myNetCashAtSale - sellNowNet;
-    const isBase = psf === baseSalePsf;
-    const irrVal = r.irr || 0;
-    const beatsSP = irrVal >= spReturn;
-    const beatsSellNow = irrVal > 0;
-    const cls = beatsSP ? 'cell-green' : beatsSellNow ? 'cell-yellow' : 'cell-red';
-    const verdict = beatsSP ? 'Beats S&P 11%' : beatsSellNow ? 'Beats Sell Now' : 'Worse';
-    html += `<tr${isBase ? ' style="font-weight:700;background:#f0f4ff"' : ''}>
-      <td>$${psf}/sf${isBase ? ' ★' : ''}</td>
-      <td>${fmt(psf * sqft)}</td>
-      <td class="${cls}">${fmt(r.myNetCashAtSale)}</td>
-      <td class="${diff >= 0 ? '' : 'negative'}">${fmt(diff)}</td>
-      <td>${fmtPct(r.irr)}</td>
-      <td class="${cls}" style="font-size:11px">${verdict}</td>
-    </tr>`;
+  const sel = $('s3-loan-months');
+  const origVal = sel.value;
+  // Ensure all timeline options exist in the select
+  timelines.forEach(mo => {
+    if (!sel.querySelector(`option[value="${mo}"]`)) {
+      const opt = document.createElement('option');
+      opt.value = mo;
+      opt.textContent = `${mo} months`;
+      sel.appendChild(opt);
+    }
   });
-  html += '</tbody>';
-  $('tbl-sens-psf').innerHTML = html;
+
+  let html = `<table class="sens-table" style="font-size:12px">`;
+  html += `<thead><tr><th style="text-align:left">IRR →</th>`;
+  timelines.forEach(mo => {
+    const isCurrent = mo === baseMonths;
+    html += `<th style="${isCurrent ? 'background:#dbeafe;font-weight:700' : ''}">${mo}mo<br><span style="font-size:9px;color:var(--muted)">${(mo/12).toFixed(1)}yr</span></th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  psfValues.forEach(psf => {
+    const isBasePsf = psf === baseSalePsf;
+    html += `<tr${isBasePsf ? ' style="font-weight:600"' : ''}>`;
+    const saleTotal = psf * sqft;
+    html += `<td style="text-align:left;white-space:nowrap${isBasePsf ? ';background:#f0f4ff' : ''}">$${psf}/sf<br><span style="font-size:9px;color:var(--muted)">$${(saleTotal/1e6).toFixed(1)}M</span></td>`;
+
+    timelines.forEach(mo => {
+      $('s3-loan-months').value = mo;
+      const r = calcJVProject(psf, null, null);
+      const irr = r.irr || 0;
+      const isCurrent = mo === baseMonths && psf === baseSalePsf;
+
+      let bg = '';
+      if (irr >= spReturn) bg = 'var(--green-bg)';
+      else if (irr > 0) bg = 'var(--yellow-bg)';
+      else bg = 'var(--red-bg)';
+
+      const border = isCurrent ? 'border:2px solid var(--accent);' : '';
+      const fw = isCurrent ? 'font-weight:800;' : '';
+      const colBg = mo === baseMonths ? 'background-blend-mode:multiply;' : '';
+
+      html += `<td style="background:${bg};${border}${fw}${colBg}text-align:center">${(irr * 100).toFixed(1)}%</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  sel.value = origVal;
+
+  html += `</tbody></table>`;
+  html += `<div style="margin-top:10px;font-size:11px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap">
+    <span><span style="display:inline-block;width:12px;height:12px;background:var(--green-bg);border:1px solid #ccc;border-radius:2px;vertical-align:middle"></span> IRR ≥ 11% (beats S&P)</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:var(--yellow-bg);border:1px solid #ccc;border-radius:2px;vertical-align:middle"></span> IRR > 0% (beats sell-now)</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:var(--red-bg);border:1px solid #ccc;border-radius:2px;vertical-align:middle"></span> IRR ≤ 0% (worse)</span>
+    <span><span style="display:inline-block;width:12px;height:12px;border:2px solid var(--accent);border-radius:2px;vertical-align:middle"></span> Current selection</span>
+  </div>`;
+  html += `<p style="font-size:11px;color:var(--muted);margin-top:8px">Read it as: "If we sell at $X/sqft in Y months, my annualized return is Z%." Faster exits at moderate prices can beat slow exits at high prices.</p>`;
+
+  $('sensitivity-matrix').innerHTML = html;
 }
 
 // ============================================================
