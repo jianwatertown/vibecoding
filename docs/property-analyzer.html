@@ -979,6 +979,13 @@ function calcOption2() {
   let totalCashFlow = 0;
   let yearlyData = [];
 
+  // Year 0 baseline for smooth chart interpolation
+  yearlyData.push({
+    year: 0, grossRent: 0, effectiveRent: 0, totalExpenses: 0, noi: 0,
+    annualMortgage: 0, annualCF: 0, propertyValue: curValue, mortgageBalance: balance, equity: curValue - balance,
+    yearInterest: 0, yearPrincipal: 0, rentAmount: curRent
+  });
+
   for (let y = 1; y <= holdYears; y++) {
     const expMult = Math.pow(1 + expenseGrowth, y - 1);
     const grossRent = curRent * 12;
@@ -1029,20 +1036,23 @@ function calcOption2() {
   const forwardAppreciation = exitValue - mktVal;
 
   // Compounded cash flow at risk-free rate (FV of all CFs at end of hold)
+  // Skip year-0 baseline entry (index 0)
   let compoundedCF = 0;
-  yearlyData.forEach((d, i) => {
-    compoundedCF += d.annualCF * Math.pow(1 + riskFreeRate, holdYears - i - 1);
-  });
+  for (let i = 1; i <= holdYears; i++) {
+    const d = yearlyData[i];
+    compoundedCF += d.annualCF * Math.pow(1 + riskFreeRate, holdYears - i);
+  }
 
-  // IRR
+  // IRR — year 0 = initial equity outflow, years 1..N = annual CF, last year includes exit
   const irrFlows = [-initialEquity];
-  yearlyData.forEach((d, i) => {
-    if (i === holdYears - 1) {
+  for (let i = 1; i <= holdYears; i++) {
+    const d = yearlyData[i];
+    if (i === holdYears) {
       irrFlows.push(d.annualCF + netExitProceeds);
     } else {
       irrFlows.push(d.annualCF);
     }
-  });
+  }
   const irr = calcIRR(irrFlows);
   const annualizedReturn = irr;
 
@@ -1052,8 +1062,8 @@ function calcOption2() {
     npvAtRiskFree += cf / Math.pow(1 + riskFreeRate, t);
   });
 
-  const yr1 = yearlyData[0] || {};
-  const yrN = yearlyData[holdYears - 1] || {};
+  const yr1 = yearlyData[1] || {};
+  const yrN = yearlyData[holdYears] || {};
   R.opt2 = {
     monthlyCF: yr1.annualCF / 12, annualCF: yr1.annualCF, totalCashFlow,
     exitValue, exitCosts, exitCostPct, netExitProceeds, balance, totalNetWorth,
@@ -1121,7 +1131,7 @@ function calcOption2() {
     <th>Expenses<br><span style="font-weight:400;font-size:9px">+${fmtPct(expenseGrowth)}/yr</span></th>
     <th>NOI</th><th>Mortgage<br><span style="font-weight:400;font-size:9px">fixed</span></th>
     <th>Cash Flow</th><th>Prop Value<br><span style="font-weight:400;font-size:9px">+${fmtPct(appreciation)}/yr</span></th><th>Equity</th></tr></thead><tbody>` +
-    yearlyData.map(d => `<tr>
+    yearlyData.filter(d => d.year > 0).map(d => `<tr>
       <td>${d.year}</td><td>${fmt(d.rentAmount)}</td><td>${fmt(d.grossRent)}</td>
       <td>${fmt(d.totalExpenses)}</td><td>${fmt(d.noi)}</td><td>${fmt(d.annualMortgage)}</td>
       <td class="${d.annualCF >= 0 ? '' : 'negative'}">${fmt(d.annualCF)}</td>
