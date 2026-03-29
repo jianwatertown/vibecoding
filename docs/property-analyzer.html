@@ -542,19 +542,23 @@ td { font-variant-numeric: tabular-nums; }
         </div>
       </div>
 
-      <h4>G. JV Economics</h4>
+      <h4>G. JV Economics (GP/LP Structure)</h4>
       <div class="field-row">
         <div class="field">
-          <label>My Ownership %</label>
-          <div class="input-wrap"><input type="number" id="s3-my-pct" value="50" step="1"><span class="suffix">%</span></div>
+          <label>LP Capital % (me) <span class="tip" data-tip="Limited Partner capital contribution share. You contribute land. Per Jeff's JV structure: LP 90% / GP 10%.">?</span></label>
+          <div class="input-wrap"><input type="number" id="s3-my-pct" value="90" step="1"><span class="suffix">%</span></div>
         </div>
         <div class="field">
-          <label>Developer Ownership %</label>
-          <div class="input-wrap"><input type="number" id="s3-dev-pct" value="50" step="1"><span class="suffix">%</span></div>
+          <label>GP Capital % (Jeff) <span class="tip" data-tip="General Partner capital contribution share. Jeff contributes cash beyond the construction loan.">?</span></label>
+          <div class="input-wrap"><input type="number" id="s3-dev-pct" value="10" step="1"><span class="suffix">%</span></div>
         </div>
       </div>
       <div class="field">
-        <label>Preferred Return % (Annual) <span class="tip" data-tip="Hurdle rate on invested capital before profit split. Jeff's deal does not include this — set to 0. Only add if negotiated.">?</span></label>
+        <label>GP Managing Fee % (of profit) <span class="tip" data-tip="First slice of profit goes to GP as managing fee before the remainder is split per capital ratio. Per Jeff's structure: 20% to GP, then remaining 80% split LP 90% / GP 10%. Your effective profit share = (1 − 20%) × 90% = 72%.">?</span></label>
+        <div class="input-wrap"><input type="number" id="s3-gp-fee" value="20" step="1"><span class="suffix">%</span></div>
+      </div>
+      <div class="field" style="display:none">
+        <label>Preferred Return</label>
         <div class="input-wrap"><input type="number" id="s3-pref-return" value="0" step="0.5"><span class="suffix">%</span></div>
       </div>
       <div class="field" style="display:none">
@@ -754,24 +758,17 @@ td { font-variant-numeric: tabular-nums; }
       <tr><td>Investor Avg Annual Return</td><td>Gross Profit ÷ Cash Investment ÷ (Loan Months ÷ 12)</td></tr>
     </table>
 
-    <h4>JV Waterfall Distribution</h4>
+    <h4>JV Waterfall Distribution (GP/LP Structure)</h4>
     <table>
       <tr><th style="width:40%">Step</th><th>Logic</th></tr>
-      <tr><td>1. Repay Construction Loan</td><td>Loan amount is repaid first from sale proceeds.</td></tr>
-      <tr><td colspan="2"><strong>Equity Structure:</strong></td></tr>
-      <tr><td>2. Return of Capital</td><td>Remaining proceeds returned pro-rata based on capital contribution shares. My share = My Equity / (My Equity + Dev Cost).</td></tr>
-      <tr><td>3. Preferred Return</td><td>Total Capital × Preferred Rate × (Months ÷ 12), split pro-rata by capital share.</td></tr>
-      <tr><td>4. Profit Split</td><td>All remaining proceeds split by My % / Dev %.</td></tr>
-      <tr><td colspan="2"><strong>Seller Note Structure:</strong></td></tr>
-      <tr><td>2. Seller Note Repayment</td><td>My equity + interest (at preferred rate) repaid first.</td></tr>
-      <tr><td>3. Developer Capital Return</td><td>Developer gets their invested capital back.</td></tr>
-      <tr><td>4. Developer Preferred</td><td>Developer gets preferred return on their capital.</td></tr>
-      <tr><td>5. Profit Split</td><td>Remaining split by My % / Dev %.</td></tr>
-      <tr><td colspan="2"><strong>Guaranteed Base + Upside:</strong></td></tr>
-      <tr><td>2. Guaranteed Payout</td><td>My guaranteed minimum amount paid first.</td></tr>
-      <tr><td>3–4. Developer Capital + Preferred</td><td>Same as seller note structure.</td></tr>
-      <tr><td>5. Upside Split</td><td>Remaining split by My % / Dev %.</td></tr>
+      <tr><td>1. Repay Construction Loan</td><td>Loan principal + interest + closing repaid first from sale proceeds.</td></tr>
+      <tr><td>2. Pay Off Existing Mortgage</td><td>Remaining mortgage on the land paid from proceeds.</td></tr>
+      <tr><td>3. Return of Capital</td><td>LP (me) and GP (Jeff) get their invested capital back, pro-rata by capital share (LP 90% / GP 10%).</td></tr>
+      <tr><td>4. GP Managing Fee</td><td>First 20% of remaining profit goes to GP as managing fee. No guaranteed payment — only paid if there is profit.</td></tr>
+      <tr><td>5. Profit Split</td><td>Remaining 80% split per capital ratio: LP 90% / GP 10%. Effective total: LP gets 72% of profit, GP gets 28%.</td></tr>
     </table>
+    <h4 style="margin-top:12px">Loss Protection</h4>
+    <p style="font-size:12px;color:var(--muted)">If the project incurs a loss, GP will hedge it — proportioned the same as the profit-sharing ratio.</p>
 
     <h4>My Returns (After Waterfall)</h4>
     <table>
@@ -1278,6 +1275,7 @@ function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
 
   const myPct = val('s3-my-pct') / 100;
   const devPct = val('s3-dev-pct') / 100;
+  const gpFeePct = (val('s3-gp-fee') || 0) / 100;
   const prefReturn = val('s3-pref-return') / 100;
   const structure = $('s3-structure').value;
   const minPayout = val('s3-min-payout');
@@ -1301,72 +1299,30 @@ function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
   remaining -= remainingMortgageAtSale;
   waterfallSteps.push({ step: 'Pay Off Remaining Mortgage', me: 0, dev: 0, remaining });
 
-  if (structure === 'equity') {
-    const totalCap = myContribution + devContribution;
-    const myCapShare = totalCap > 0 ? myContribution / totalCap : 0;
-    const capitalToReturn = Math.min(remaining, totalCap);
-    const myCapReturn = capitalToReturn * myCapShare;
-    const devCapReturn = capitalToReturn * (1 - myCapShare);
-    remaining -= capitalToReturn;
-    waterfallSteps.push({ step: 'Return of Capital', me: myCapReturn, dev: devCapReturn, remaining });
+  // GP/LP Waterfall (per Jeff's JV structure)
+  // 1. Return capital to LP and GP
+  const totalCap = myContribution + devContribution;
+  const myCapShare = totalCap > 0 ? myContribution / totalCap : 0;
+  const capitalToReturn = Math.min(remaining, totalCap);
+  const myCapReturn = capitalToReturn * myCapShare;
+  const devCapReturn = capitalToReturn * (1 - myCapShare);
+  remaining -= capitalToReturn;
+  waterfallSteps.push({ step: 'Return of Capital', me: myCapReturn, dev: devCapReturn, remaining });
 
-    const prefAmt = totalCap * prefReturn * (totalMonths / 12);
-    const myPref = Math.min(remaining, prefAmt * myCapShare);
-    const devPref = Math.min(remaining - myPref, prefAmt * (1 - myCapShare));
-    remaining -= (myPref + devPref);
-    waterfallSteps.push({ step: 'Preferred Return', me: myPref, dev: devPref, remaining });
+  // 2. GP Managing Fee (first slice of profit)
+  const gpFee = Math.max(0, remaining * gpFeePct);
+  remaining -= gpFee;
+  waterfallSteps.push({ step: `GP Managing Fee (${(gpFeePct * 100).toFixed(0)}% of profit)`, me: 0, dev: gpFee, remaining });
 
-    const myProfit = remaining * myPct;
-    const devProfit = remaining * devPct;
-    remaining -= (myProfit + devProfit);
-    waterfallSteps.push({ step: 'Profit Split', me: myProfit, dev: devProfit, remaining });
+  // 3. Remaining profit split per capital ratio (LP myPct / GP devPct)
+  const myProfit = remaining * myPct;
+  const devProfit = remaining * devPct;
+  remaining -= (myProfit + devProfit);
+  const effectiveLpPct = ((1 - gpFeePct) * myPct * 100).toFixed(0);
+  waterfallSteps.push({ step: `Profit Split (LP ${(myPct*100).toFixed(0)}% / GP ${(devPct*100).toFixed(0)}% of remaining ${((1-gpFeePct)*100).toFixed(0)}%)`, me: myProfit, dev: devProfit, remaining });
 
-    myPayout = myCapReturn + myPref + myProfit;
-    devPayout = devCapReturn + devPref + devProfit;
-
-  } else if (structure === 'note') {
-    const noteInterest = myContribution * prefReturn * (totalMonths / 12);
-    const notePayout = Math.min(remaining, myContribution + noteInterest);
-    remaining -= notePayout;
-    waterfallSteps.push({ step: 'Seller Note Repayment', me: notePayout, dev: 0, remaining });
-
-    const devCapReturn = Math.min(remaining, devContribution);
-    remaining -= devCapReturn;
-    waterfallSteps.push({ step: 'Developer Capital Return', me: 0, dev: devCapReturn, remaining });
-
-    const devPref = Math.min(remaining, devContribution * prefReturn * (totalMonths / 12));
-    remaining -= devPref;
-    waterfallSteps.push({ step: 'Developer Preferred Return', me: 0, dev: devPref, remaining });
-
-    const myProfit = remaining * myPct;
-    const devProfit = remaining * devPct;
-    remaining -= (myProfit + devProfit);
-    waterfallSteps.push({ step: 'Profit Split', me: myProfit, dev: devProfit, remaining });
-
-    myPayout = notePayout + myProfit;
-    devPayout = devCapReturn + devPref + devProfit;
-
-  } else {
-    const guaranteed = Math.min(remaining, minPayout);
-    remaining -= guaranteed;
-    waterfallSteps.push({ step: 'Guaranteed Payout to Me', me: guaranteed, dev: 0, remaining });
-
-    const devCapReturn = Math.min(remaining, devContribution);
-    remaining -= devCapReturn;
-    waterfallSteps.push({ step: 'Developer Capital Return', me: 0, dev: devCapReturn, remaining });
-
-    const devPref = Math.min(remaining, devContribution * prefReturn * (totalMonths / 12));
-    remaining -= devPref;
-    waterfallSteps.push({ step: 'Developer Preferred Return', me: 0, dev: devPref, remaining });
-
-    const myUpside = remaining * myPct;
-    const devUpside = remaining * devPct;
-    remaining -= (myUpside + devUpside);
-    waterfallSteps.push({ step: 'Upside Split', me: myUpside, dev: devUpside, remaining });
-
-    myPayout = guaranteed + myUpside;
-    devPayout = devCapReturn + devPref + devUpside;
-  }
+  myPayout = myCapReturn + myProfit;
+  devPayout = devCapReturn + gpFee + devProfit;
 
   const myProfitAmt = myPayout - myContribution;
   const myTax = Math.max(0, myProfitAmt * taxRate);
@@ -1376,10 +1332,6 @@ function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
   const myROI = myContribution > 0 ? (myNetAfterTax - myContribution) / myContribution : 0;
   const myAnnReturn = totalYears > 0 && myContribution > 0 ?
     Math.pow(Math.max(0, myNetAfterTax / myContribution), 1 / totalYears) - 1 : 0;
-
-  // Jeff's project-level return: gross profit ÷ total project cost, annualized
-  const jeffProjectReturn = totalYears > 0 && totalProjectCost > 0 ?
-    grossProfit / totalProjectCost / totalYears : 0;
 
   // IRR using MONTHLY cash flows for precision (14-month project, not 2 years)
   const sellNowNet = R.opt1.netCash || 0;
@@ -1423,12 +1375,12 @@ function calcJVProject(overrideSalePsf, overrideConstPsf, overrideLoanRate) {
     loanAmount, loanClosing, interestCarry,
     cashInvest, cashAfterLand, ltc,
     saleBase, salePsf, sellingCosts, netSaleProceeds, grossProfit,
-    totalROI, totalROE, jeffProjectReturn,
+    totalROI, totalROE,
     totalCapitalIn: myContribution + devContribution,
     myPayout, devPayout, waterfallSteps, myProfit: myProfitAmt, myTax, myNetAfterTax, myNetCashAtSale,
     totalMonths, myROI, myAnnReturn, irr, initialEquity, jvNpv, riskFreeRate,
     totalMortgagePayments, remainingMortgageAtSale, yearlyMortgageCF, irrFlows, mortgagePmt,
-    structure, myPct, devPct,
+    structure, myPct, devPct, gpFeePct,
     buildingSqft, constructionPsf
   };
 }
@@ -1496,8 +1448,9 @@ function calcOption3() {
         <div class="result-item"><div class="r-label">My Tax on Profit (${val('s3-tax-rate')}%)</div><div class="r-value negative">${fmt(base.myTax)}</div></div>
         <div class="result-item full highlight"><div class="r-label">My Net Cash at Sale <span class="tip" data-tip="Waterfall payout minus tax. Mortgage already paid from sale proceeds before waterfall distribution.">?</span></div><div class="r-value ${colorClass(base.myNetCashAtSale)}" style="font-size:24px">${fmt(base.myNetCashAtSale)}</div></div>
         <div class="result-item"><div class="r-label">Incremental vs Sell Now</div><div class="r-value ${colorClass(base.myNetCashAtSale - R.opt1.netCash)}">${fmt(base.myNetCashAtSale - R.opt1.netCash)}</div></div>
-        <div class="result-item"><div class="r-label">Developer Payout</div><div class="r-value">${fmt(base.devPayout)}</div></div>
+        <div class="result-item"><div class="r-label">GP (Jeff) Total Payout <span class="tip" data-tip="GP managing fee (${(base.gpFeePct*100).toFixed(0)}% of profit) + GP capital share (${(base.devPct*100).toFixed(0)}% of remaining profit) + capital return.">?</span></div><div class="r-value">${fmt(base.devPayout)}</div></div>
         <div class="result-item"><div class="r-label">Timeline</div><div class="r-value">${base.totalMonths} months (${jvTotalYears.toFixed(1)} yrs)</div></div>
+        <div class="result-item"><div class="r-label">My Effective Profit Share</div><div class="r-value">${((1 - base.gpFeePct) * base.myPct * 100).toFixed(0)}% <span style="font-size:10px;color:var(--muted)">(${(base.myPct*100).toFixed(0)}% of ${((1-base.gpFeePct)*100).toFixed(0)}% after GP fee)</span></div></div>
       </div>
     </div>
 
@@ -1516,13 +1469,13 @@ function calcOption3() {
     </div>
 
     <div style="border-left:3px solid #e5e7eb;padding-left:14px;margin-top:24px;opacity:0.8">
-      <h4 style="margin:0 0 10px;font-size:12px;color:#9ca3af;font-weight:600;font-style:italic">CAPITAL STRUCTURE — Who Puts In What</h4>
+      <h4 style="margin:0 0 10px;font-size:12px;color:#9ca3af;font-weight:600;font-style:italic">CAPITAL STRUCTURE — GP/LP</h4>
       <div class="result-grid">
-        <div class="result-item" style="background:#f5f5f5"><div class="r-label">My Land Equity (${fmt(base.landPrice)} land − ${fmt(base.mortgage)} mortgage)</div><div class="r-value">${fmt(base.myContribution)}</div></div>
-        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Developer Cash Equity (${fmt(base.totalDevCost)} dev − ${fmt(base.loanAmount)} loan)</div><div class="r-value">${fmt(base.devContribution)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">LP (me) — Land Equity (${fmt(base.landPrice)} land − ${fmt(base.mortgage)} mortgage)</div><div class="r-value">${fmt(base.myContribution)} <span style="font-size:10px;color:var(--muted)">(${(base.myContribution / (base.myContribution + base.devContribution) * 100).toFixed(0)}%)</span></div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">GP (Jeff) — Cash Equity (${fmt(base.totalDevCost)} dev − ${fmt(base.loanAmount)} loan)</div><div class="r-value">${fmt(base.devContribution)} <span style="font-size:10px;color:var(--muted)">(${(base.devContribution / (base.myContribution + base.devContribution) * 100).toFixed(0)}%)</span></div></div>
         <div class="result-item" style="background:#f5f5f5"><div class="r-label">Existing Mortgage (lien, paid from sale)</div><div class="r-value">${fmt(base.mortgage)}</div></div>
         <div class="result-item" style="background:#f5f5f5"><div class="r-label">Construction Loan (debt, repaid from sale)</div><div class="r-value">${fmt(base.loanAmount)}</div></div>
-        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Total Equity (my + Jeff's, excl. debts)</div><div class="r-value">${fmt(base.myContribution + base.devContribution)}</div></div>
+        <div class="result-item" style="background:#f5f5f5"><div class="r-label">Total Investor Funds (LP + GP equity)</div><div class="r-value">${fmt(base.myContribution + base.devContribution)}</div></div>
       </div>
     </div>
   `;
@@ -1560,7 +1513,7 @@ function calcOption3() {
     <tr><td>Project ROI</td><td>${fmtPct(low.totalROI)}</td><td>${fmtPct(base.totalROI)}</td><td>${fmtPct(high.totalROI)}</td></tr>
     <tr><td>My Payout (Pre-Tax)</td><td>${fmt(low.myPayout)}</td><td>${fmt(base.myPayout)}</td><td>${fmt(high.myPayout)}</td></tr>
     <tr><td style="font-weight:700">My Net Cash at Sale</td><td style="font-weight:700">${fmt(low.myNetCashAtSale)}</td><td style="font-weight:700">${fmt(base.myNetCashAtSale)}</td><td style="font-weight:700">${fmt(high.myNetCashAtSale)}</td></tr>
-    <tr><td>Developer Payout</td><td>${fmt(low.devPayout)}</td><td>${fmt(base.devPayout)}</td><td>${fmt(high.devPayout)}</td></tr>
+    <tr><td>GP (Jeff) Total Payout</td><td>${fmt(low.devPayout)}</td><td>${fmt(base.devPayout)}</td><td>${fmt(high.devPayout)}</td></tr>
     <tr style="font-weight:700"><td>IRR (vs Sell Now)</td><td>${fmtPct(low.irr)}</td><td>${fmtPct(base.irr)}</td><td>${fmtPct(high.irr)}</td></tr>
     <tr><td>NPV at ${fmtPct(base.riskFreeRate)}</td><td class="${low.jvNpv >= 0 ? '' : 'negative'}">${fmt(low.jvNpv)}</td><td class="${base.jvNpv >= 0 ? '' : 'negative'}">${fmt(base.jvNpv)}</td><td class="${high.jvNpv >= 0 ? '' : 'negative'}">${fmt(high.jvNpv)}</td></tr>
     <tr><td>Incremental vs Sell Now</td><td>${fmt(low.myNetCashAtSale - R.opt1.netCash)}</td><td>${fmt(base.myNetCashAtSale - R.opt1.netCash)}</td><td>${fmt(high.myNetCashAtSale - R.opt1.netCash)}</td></tr>
@@ -1932,7 +1885,7 @@ function presetScenario(type) {
       's3-loan-amount': 1500000, 's3-loan-rate': 9.5, 's3-loan-months': 24,
       's3-sale-psf': 650, 's3-sell-close-pct': 7.5,
       's3-sale-low-psf': 585, 's3-sale-high-psf': 715,
-      's3-my-pct': 45, 's3-dev-pct': 55, 's3-pref-return': 0,
+      's3-my-pct': 90, 's3-dev-pct': 10, 's3-gp-fee': 20, 's3-pref-return': 0,
       's3-structure': 'equity', 's3-min-payout': 0,
       's3-tax-rate': 25, 's3-legal': 0, 's3-accounting': 0, 's3-other-txn': 0
     },
@@ -1954,7 +1907,7 @@ function presetScenario(type) {
       's3-loan-amount': 1500000, 's3-loan-rate': 7.5, 's3-loan-months': 24,
       's3-sale-psf': 723, 's3-sell-close-pct': 7,
       's3-sale-low-psf': 638, 's3-sale-high-psf': 795,
-      's3-my-pct': 50, 's3-dev-pct': 50, 's3-pref-return': 0,
+      's3-my-pct': 90, 's3-dev-pct': 10, 's3-gp-fee': 20, 's3-pref-return': 0,
       's3-structure': 'equity', 's3-min-payout': 0,
       's3-tax-rate': 20, 's3-legal': 0, 's3-accounting': 0, 's3-other-txn': 0
     },
@@ -1976,7 +1929,7 @@ function presetScenario(type) {
       's3-loan-amount': 1500000, 's3-loan-rate': 6.5, 's3-loan-months': 18,
       's3-sale-psf': 795, 's3-sell-close-pct': 6.5,
       's3-sale-low-psf': 723, 's3-sale-high-psf': 875,
-      's3-my-pct': 55, 's3-dev-pct': 45, 's3-pref-return': 0,
+      's3-my-pct': 90, 's3-dev-pct': 10, 's3-gp-fee': 20, 's3-pref-return': 0,
       's3-structure': 'equity', 's3-min-payout': 0,
       's3-tax-rate': 18, 's3-legal': 0, 's3-accounting': 0, 's3-other-txn': 0
     }
@@ -2025,7 +1978,7 @@ function exportCSV() {
     ['Finished Sale Price', o3.saleBase], ['Net Proceeds', o3.netSaleProceeds],
     ['Gross Profit', o3.grossProfit], ['Project ROI', o3.totalROI],
     ['My Payout Pre-Tax', o3.myPayout], ['My Tax', o3.myTax], ['My Net After Tax', o3.myNetAfterTax],
-    ['Developer Payout', o3.devPayout]
+    ['GP (Jeff) Total Payout', o3.devPayout]
   ];
 
   const csv = rows.map(r => r.map(c => typeof c === 'number' ? c.toFixed(0) : (c||'')).join(',')).join('\n');
@@ -2234,24 +2187,28 @@ function updateFactsAndAssumptions() {
     `  Sale Price: $${val('s3-sale-psf')}/sqft × ${val('s3-building-sqft')} = $${(val('s3-sale-psf') * val('s3-building-sqft')).toLocaleString()}`,
     `  Selling Costs at Exit: ${val('s3-sell-close-pct')}%`,
     '',
-    'JV DEAL STRUCTURE:',
-    `  I contribute: land ($${val('s3-as-is-value').toLocaleString()}) + continue paying mortgage ($${mortPmt}/mo)`,
-    `  Jeff contributes: all development costs, paid via construction loan + his cash`,
-    `  JV Split: me ${val('s3-my-pct')}% / dev ${val('s3-dev-pct')}%`,
-    `  Preferred Return: ${val('s3-pref-return')}%`,
+    'JV DEAL STRUCTURE (GP/LP):',
+    `  LP (me): land ($${val('s3-as-is-value').toLocaleString()}) + continue paying mortgage ($${mortPmt}/mo)`,
+    `  GP (Jeff): all dev costs, paid via construction loan + his cash`,
+    `  Capital: LP ${val('s3-my-pct')}% / GP ${val('s3-dev-pct')}%`,
+    `  Profit: GP managing fee ${val('s3-gp-fee')}% first, then remaining ${100-val('s3-gp-fee')}% split per capital`,
+    `  My effective profit share: ${val('s3-my-pct')}% × ${100-val('s3-gp-fee')}% = ${(val('s3-my-pct') * (100-val('s3-gp-fee')) / 100).toFixed(0)}%`,
+    `  GP effective profit share: ${val('s3-gp-fee')}% + ${val('s3-dev-pct')}% × ${100-val('s3-gp-fee')}% = ${(val('s3-gp-fee') + val('s3-dev-pct') * (100-val('s3-gp-fee')) / 100).toFixed(0)}%`,
     `  Tax Rate on my profit: ${val('s3-tax-rate')}%`,
     '',
-    'WATERFALL:',
+    'WATERFALL (GP/LP Structure):',
     `  Net Sale Proceeds: ${fmt(o3.netSaleProceeds)} (sale ${fmt(o3.saleBase)} − ${val('s3-sell-close-pct')}% costs)`,
     `  1. Repay Loan (principal+interest+closing): -$${loanPayoff.toLocaleString()}`,
     `  2. Pay Off Remaining Mortgage: -${fmt(o3.remainingMortgageAtSale)}`,
-    `  3. Return Capital: me ${fmt(o3.myContribution)} + Jeff ${fmt(o3.devContribution)}`,
-    `  4. Preferred Return (${val('s3-pref-return')}%): pro-rata on capital`,
-    `  5. Profit Split: me ${val('s3-my-pct')}% / dev ${val('s3-dev-pct')}%`,
+    `  3. Return Capital: LP(me) ${fmt(o3.myContribution)} + GP(Jeff) ${fmt(o3.devContribution)}`,
+    `  4. GP Managing Fee: ${val('s3-gp-fee')}% of remaining profit → GP`,
+    `  5. Remaining ${100 - val('s3-gp-fee')}% split per capital: LP ${val('s3-my-pct')}% / GP ${val('s3-dev-pct')}%`,
+    `  → My effective profit share: ${val('s3-my-pct')}% × ${100 - val('s3-gp-fee')}% = ${(val('s3-my-pct') * (100 - val('s3-gp-fee')) / 100).toFixed(0)}%`,
     '',
     'MY RESULTS:',
-    `  My equity: ${fmt(o3.myContribution)} (land $${val('s3-as-is-value').toLocaleString()} − mortgage $${val('s3-mortgage').toLocaleString()})`,
-    `  Jeff's cash equity: ${fmt(o3.devContribution)} (dev costs − loan)`,
+    `  LP (me) equity: ${fmt(o3.myContribution)} (land $${val('s3-as-is-value').toLocaleString()} − mortgage $${val('s3-mortgage').toLocaleString()})`,
+    `  GP (Jeff) equity: ${fmt(o3.devContribution)} (dev costs − loan)`,
+    `  Total Investor Funds: ${fmt(o3.myContribution + o3.devContribution)}`,
     `  My mortgage during construction: ${fmt(o3.totalMortgagePayments)} (${loanMonths} mo × $${mortPmt})`,
     `  My pre-tax waterfall payout: ${fmt(o3.myPayout)}`,
     `  My tax: ${fmt(o3.myTax)}`,
