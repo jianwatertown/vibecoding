@@ -1680,10 +1680,10 @@ function drawTimelineChart(o1, o2, o3) {
       const propVal = d.propertyValue + (dNext.propertyValue - d.propertyValue) * frac;
       const mortBal = d.mortgageBalance + (dNext.mortgageBalance - d.mortgageBalance) * frac;
       const netIfSold = propVal * (1 - exitCostPct) - mortBal;
-      // Smooth cumulative CF: full years + fractional portion of current year
+      // Cumulative CF: sum completed years (1..yr) + fraction of next year
       let cumCF = 0;
-      for (let y = 0; y < yr; y++) cumCF += o2.yearlyData[y].annualCF;
-      cumCF += d.annualCF * frac;
+      for (let y = 1; y <= yr; y++) cumCF += o2.yearlyData[y].annualCF;
+      if (frac > 0 && (yr + 1) < o2.yearlyData.length) cumCF += o2.yearlyData[yr + 1].annualCF * frac;
       rentalLine.push({ t, v: netIfSold + cumCF });
     }
 
@@ -1832,6 +1832,32 @@ function drawTimelineChart(o1, o2, o3) {
     jvTickSvg += `<path d="${pathD(jvTickLines[idx])}" fill="none" stroke="#8b5cf6" stroke-width="0.6" opacity="0.25" stroke-dasharray="2,4"/>`;
   });
 
+  // Year-marker dots: find value at each integer year for key lines
+  function valAtYear(line, year) {
+    let best = null;
+    for (const p of line) {
+      if (best === null || Math.abs(p.t - year) < Math.abs(best.t - year)) best = p;
+    }
+    return best;
+  }
+  let yearDots = '';
+  const dotLines = [
+    { line: sellNowLine, color: '#2563eb', label: 'RF', above: true },
+    { line: spLine, color: '#f59e0b', label: 'SP', above: true },
+    { line: rentalLine, color: '#16a34a', label: 'Rent', above: false },
+    { line: jvBaseLine, color: '#7c3aed', label: 'JV', above: false },
+  ];
+  for (let yr = 1; yr <= maxYears; yr++) {
+    dotLines.forEach(({ line, color, above }) => {
+      const p = valAtYear(line, yr);
+      if (!p || isNaN(p.v)) return;
+      const cx = tx(p.t), cy = ty(p.v);
+      yearDots += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="${color}" stroke="white" stroke-width="1"/>`;
+      const yOff = above ? -7 : 10;
+      yearDots += `<text x="${cx}" y="${cy + yOff}" text-anchor="middle" font-size="8" fill="${color}" opacity="0.8">${fmtK(p.v)}</text>`;
+    });
+  }
+
   container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%">
     ${gridLines}
     ${jvSaleBand}
@@ -1844,6 +1870,7 @@ function drawTimelineChart(o1, o2, o3) {
     <path d="${pathD(spLine)}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2"/>
     <path d="${pathD(rentalLine)}" fill="none" stroke="#16a34a" stroke-width="2.5"/>
     ${startDot}
+    ${yearDots}
     ${benchmarkDots}
     ${scenarioDots}
     ${endLabels}
