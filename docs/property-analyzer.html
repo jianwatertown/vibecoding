@@ -1670,7 +1670,10 @@ function drawTimelineChart(o1, o2, o3) {
       const propVal = d.propertyValue + (dNext.propertyValue - d.propertyValue) * frac;
       const mortBal = d.mortgageBalance + (dNext.mortgageBalance - d.mortgageBalance) * frac;
       const netIfSold = propVal * (1 - exitCostPct) - mortBal;
-      const cumCF = o2.yearlyData.slice(0, yr + 1).reduce((s, dd) => s + dd.annualCF, 0);
+      // Smooth cumulative CF: full years + fractional portion of current year
+      let cumCF = 0;
+      for (let y = 0; y < yr; y++) cumCF += o2.yearlyData[y].annualCF;
+      cumCF += d.annualCF * frac;
       rentalLine.push({ t, v: netIfSold + cumCF });
     }
 
