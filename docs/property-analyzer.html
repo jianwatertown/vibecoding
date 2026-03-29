@@ -1087,7 +1087,8 @@ function calcOption2() {
   R.opt2 = {
     monthlyCF: avgMonthlyCF, annualCF: (yr1.annualCF || 0), totalCashFlow,
     exitValue, exitCosts, sellNowCostRate, netExitProceeds, balance: exitBalance, totalNetWorth,
-    initialEquity, irr, annualizedReturn, holdYears, holdMonths, yearlyData
+    initialEquity, irr, annualizedReturn, holdYears, holdMonths, yearlyData,
+    npv: npvAtRiskFree
   };
 
   const irrSummary = `<span style="color:var(--red)">Mo0: ${fmt(-initialEquity)}</span> → <span style="color:var(--muted)">${holdMonths - 1} months of ~${fmt(avgMonthlyCF)}/mo</span> → <span style="color:var(--green)">Mo${holdMonths}: ${fmt(monthlyIrrFlows[holdMonths])}</span>`;
@@ -2098,78 +2099,194 @@ function updateFactsAndAssumptions() {
     `Jeff\'s 3 scenarios: $3.0M / $3.4M / $3.74M (638/723/795 $/sqft)`,
   ];
 
+  // Generate rental monthly cash flows for validation
+  const holdMo = val('s3-loan-months');
+  const rentAmt = val('s2-rent'), vacPct = val('s2-vacancy') / 100, pmPct = val('s2-pm-fee') / 100;
+  const bMaint = val('s2-maintenance'), bPTax = val('s2-prop-tax'), bIns = val('s2-insurance');
+  const bUtils = 0, bHoa = 0, bCapex = val('s2-capex');
+  const mortPmt = val('s2-mortgage-pmt'), iRate = val('s2-int-rate') / 100;
+  const rGrow = val('s2-rent-growth') / 100, eGrow = val('s2-expense-growth') / 100;
+  const appRate = val('s2-appreciation') / 100;
+  const mktV = val('s1-sale-price');
+  const sellCostRate = (o1.sellCostPct * 100).toFixed(2);
+  const sellCostRateNum = o1.sellCostPct;
+
+  let rBal = val('s2-mortgage-bal'), rRent = rentAmt;
+  const rentalFlows = [-(o1.netCash || 0)];
+  const rentalFlowDetails = [`Mo0: -${fmt(o1.netCash)} (initial equity = sell-now net cash)`];
+  for (let m = 1; m <= holdMo; m++) {
+    const yrIdx = Math.ceil(m / 12);
+    const expMult = Math.pow(1 + eGrow, yrIdx - 1);
+    const effRent = rRent * (1 - vacPct);
+    const pm = effRent * pmPct;
+    const mExp = pm + (bMaint + bPTax + bIns + bUtils) * expMult / 12 + bHoa / 12 + bCapex / 12;
+    const mCF = effRent - mExp - mortPmt;
+    if (rBal > 0) { const mi = rBal * (iRate / 12); const mp = Math.min(mortPmt - mi, rBal); rBal = Math.max(0, rBal - mp); }
+    if (m % 12 === 0) rRent *= (1 + rGrow);
+    if (m === holdMo) {
+      const ePV = mktV * Math.pow(1 + appRate, holdMo / 12);
+      const eC = ePV * sellCostRateNum;
+      const netExit = ePV - eC - rBal;
+      rentalFlows.push(mCF + netExit);
+      rentalFlowDetails.push(`Mo${m}: ${fmt(mCF + netExit)} = CF ${fmt(mCF)} + exit ${fmt(netExit)} (propVal ${fmt(ePV)} − costs ${fmt(eC)} − mortBal ${fmt(rBal)})`);
+    } else {
+      rentalFlows.push(mCF);
+      if (m <= 3 || m === 12 || m === 13 || m === holdMo - 1) {
+        rentalFlowDetails.push(`Mo${m}: ${fmt(mCF)} (effRent ${fmt(effRent)} − exp ${fmt(mExp)} − mortPmt ${fmt(mortPmt)}, mortBal=${fmt(rBal)})`);
+      } else if (m === 4) {
+        rentalFlowDetails.push(`Mo4–${Math.min(11, holdMo-1)}: ~${fmt(mCF)}/mo (same pattern, year 1 expenses)`);
+      } else if (m === 14 && holdMo > 14) {
+        rentalFlowDetails.push(`Mo14–${holdMo-1}: ~${fmt(mCF)}/mo (year 2: rent grew ${val('s2-rent-growth')}%, expenses grew ${val('s2-expense-growth')}%)`);
+      }
+    }
+  }
+
+  // Generate JV monthly cash flows for validation
+  const jvMortPmt = o3.mortgagePmt || mortPmt;
+  const jvFlows = [-(o1.netCash || 0)];
+  const jvFlowDetails = [`Mo0: -${fmt(o1.netCash)} (initial equity = sell-now net cash)`];
+  for (let m = 1; m <= loanMonths; m++) {
+    if (m === loanMonths) {
+      const finalFlow = -jvMortPmt + (o3.myNetCashAtSale || 0);
+      jvFlows.push(finalFlow);
+      jvFlowDetails.push(`Mo${m}: ${fmt(finalFlow)} = -mortPmt ${fmt(jvMortPmt)} + netCashAtSale ${fmt(o3.myNetCashAtSale)}`);
+    } else {
+      jvFlows.push(-jvMortPmt);
+      if (m <= 2) jvFlowDetails.push(`Mo${m}: -${fmt(jvMortPmt)} (mortgage payment only)`);
+      else if (m === 3) jvFlowDetails.push(`Mo3–${loanMonths-1}: -${fmt(jvMortPmt)}/mo (same pattern)`);
+    }
+  }
+
   const assumptions = [
     '=== OPTION 1: SELL NOW ===',
     `Sale Price: $${val('s1-sale-price').toLocaleString()} (source: ${$('s1-price-source').value})`,
-    `Agent Commission: ${val('s1-commission')}%`,
-    `Closing Costs: ${val('s1-closing-pct')}%`,
-    `Excise Tax: ${val('s1-excise')}%`,
-    `Repair/Staging: $${val('s1-repair').toLocaleString()}`,
-    `Capital Gains Tax: $${val('s1-captax').toLocaleString()}`,
-    `Other Costs: $${val('s1-other').toLocaleString()}`,
-    `Mortgage Payoff: $${val('s1-mortgage').toLocaleString()}`,
-    `→ Total Selling Costs: ${fmt(o1.totalCosts)}`,
-    `→ Net Cash to Owner: ${fmt(o1.netCash)}`,
+    `  Agent Commission: ${val('s1-commission')}% = ${fmt(o1.commission)}`,
+    `  Closing Costs: ${val('s1-closing-pct')}% = ${fmt(o1.closing)}`,
+    `  Excise Tax: ${val('s1-excise')}% = ${fmt(o1.excise)}`,
+    `  Repair/Staging: ${fmt(o1.repair)}`,
+    `  Capital Gains Tax: ${fmt(o1.capTax)}`,
+    `  Other Costs: ${fmt(o1.other)}`,
+    `  TOTAL Selling Costs: ${fmt(o1.totalCosts)}`,
+    `  Effective Sell Cost Rate: ${fmt(o1.totalCosts)} / ${fmt(o1.price)} = ${sellCostRate}%`,
+    `Mortgage Payoff: ${fmt(val('s1-mortgage'))}`,
+    `→ Net Cash to Owner: ${fmt(o1.price)} − ${fmt(o1.totalCosts)} − ${fmt(val('s1-mortgage'))} = ${fmt(o1.netCash)}`,
     '',
     '=== OPTION 2: KEEP AS RENTAL ===',
-    `Hold Period: ${val('s3-loan-months')} months (same as sell timeline)`,
-    `Monthly Rent: $${val('s2-rent').toLocaleString()}`,
-    `Rent Growth: ${val('s2-rent-growth')}%/year`,
-    `Annual Appreciation: ${val('s2-appreciation')}%/year`,
-    `Expense Growth: ${val('s2-expense-growth')}%/year`,
-    `Vacancy Rate: ${val('s2-vacancy')}%`,
-    `Property Management Fee: ${val('s2-pm-fee')}%`,
-    `Maintenance: $${val('s2-maintenance').toLocaleString()}/year`,
-    `Property Tax: $${val('s2-prop-tax').toLocaleString()}/year`,
-    `Insurance: $${val('s2-insurance').toLocaleString()}/year`,
-    `CapEx Reserve: $${val('s2-capex').toLocaleString()}/year`,
-    `Mortgage: $${val('s2-mortgage-pmt').toLocaleString()}/mo at ${val('s2-int-rate')}%`,
-    `Exit Selling Cost: ${(R.opt1.sellCostPct * 100).toFixed(1)}% (auto-synced from sell-now costs)`,
-    `Risk-Free Rate (10yr bond): ${val('s2-risk-free')}%`,
-    `→ IRR: ${fmtPct(o2.irr)}`,
-    `→ Total Net Wealth at Exit: ${fmt(o2.totalNetWorth)}`,
+    '',
+    'INPUTS:',
+    `  Hold Period: ${holdMo} months`,
+    `  Current Market Value: $${mktV.toLocaleString()} (synced from Option 1 sale price)`,
+    `  Monthly Rent: $${rentAmt.toLocaleString()}, Vacancy: ${val('s2-vacancy')}%, PM Fee: ${val('s2-pm-fee')}%`,
+    `  Annual Expenses: Maintenance $${bMaint.toLocaleString()} + PropTax $${bPTax.toLocaleString()} + Insurance $${bIns.toLocaleString()} + CapEx $${bCapex.toLocaleString()} = $${(bMaint+bPTax+bIns+bCapex).toLocaleString()}/yr`,
+    `  Mortgage: $${mortPmt.toLocaleString()}/mo at ${val('s2-int-rate')}%, balance $${val('s2-mortgage-bal').toLocaleString()}`,
+    `  Appreciation: ${val('s2-appreciation')}%/yr, Rent Growth: ${val('s2-rent-growth')}%/yr, Expense Growth: ${val('s2-expense-growth')}%/yr`,
+    `  Exit Selling Cost: ${sellCostRate}% (= sell-now effective rate, includes commission+closing+excise+capGains+other)`,
+    '',
+    'MONTHLY CASH FLOW FORMULA:',
+    `  Effective Rent = $${rentAmt} × (1 − ${val('s2-vacancy')}%) = $${(rentAmt * (1 - vacPct)).toFixed(0)}/mo (grows ${val('s2-rent-growth')}%/yr)`,
+    `  PM Fee = Effective Rent × ${val('s2-pm-fee')}% = $${(rentAmt * (1 - vacPct) * pmPct).toFixed(0)}/mo`,
+    `  Monthly Expenses = PM + (Maint+Tax+Ins+Utils)/12 + HOA/12 + CapEx/12 = $${(rentAmt*(1-vacPct)*pmPct + (bMaint+bPTax+bIns+bUtils)/12 + bHoa/12 + bCapex/12).toFixed(0)}/mo`,
+    `  Monthly CF = Eff.Rent − Expenses − Mortgage = $${(rentAmt*(1-vacPct)).toFixed(0)} − $${(rentAmt*(1-vacPct)*pmPct + (bMaint+bPTax+bIns+bUtils)/12 + bHoa/12 + bCapex/12).toFixed(0)} − $${mortPmt} = $${(rentAmt*(1-vacPct) - (rentAmt*(1-vacPct)*pmPct + (bMaint+bPTax+bIns)/12 + bCapex/12) - mortPmt).toFixed(0)}/mo`,
+    '',
+    'EXIT CALCULATION:',
+    `  Property Value at ${holdMo}mo: $${mktV.toLocaleString()} × (1 + ${val('s2-appreciation')}%)^${(holdMo/12).toFixed(2)} = ${fmt(mktV * Math.pow(1 + appRate, holdMo/12))}`,
+    `  Exit Costs (${sellCostRate}%): ${fmt(mktV * Math.pow(1 + appRate, holdMo/12) * sellCostRateNum)}`,
+    `  Remaining Mortgage at ${holdMo}mo: ${fmt(o2.balance)}`,
+    `  Net Exit Proceeds: ${fmt(o2.exitValue)} − ${fmt(o2.exitCosts)} − ${fmt(o2.balance)} = ${fmt(o2.netExitProceeds)}`,
+    '',
+    'IRR CALCULATION (monthly precision):',
+    `  Initial Equity (Mo0 outflow) = Sell-Now Net Cash = ${fmt(o1.netCash)}`,
+    `  This represents the opportunity cost: what you forgo by NOT selling today.`,
+    `  Exit cost uses the SAME ${sellCostRate}% rate as sell-now (commission+closing+excise+capGains+other)`,
+    `  so the IRR purely measures rental performance, not an exit-cost arbitrage.`,
+    '',
+    `  CASH FLOW SERIES (${rentalFlows.length} monthly entries):`,
+    ...rentalFlowDetails,
+    '',
+    `  IRR Method: Solve for monthly rate r where NPV = Σ(flow_i / (1+r)^i) = 0, then annualize: (1+r)^12 − 1`,
+    `  → Monthly IRR: ${o2.irr ? ((Math.pow(1 + o2.irr, 1/12) - 1) * 100).toFixed(4) : '?'}%`,
+    `  → Annual IRR: ${fmtPct(o2.irr)}`,
+    `  → Total Net Wealth at Exit: ${fmt(o2.totalNetWorth)}`,
+    '',
+    `  NPV at Risk-Free Rate (${val('s2-risk-free')}%): ${fmt(o2.npv || 0)}`,
+    `  Spread (IRR − Risk-Free): ${o2.irr ? ((o2.irr - val('s2-risk-free')/100) * 100).toFixed(1) : '?'}%`,
+    '',
+    'WHY RENTAL IRR ≈ 4.6%:',
+    `  Monthly CF: ~-$2,052 (cash-flow negative — rent doesn't cover mortgage + expenses)`,
+    `  Annual appreciation: ${val('s2-appreciation')}% on $${mktV.toLocaleString()} = ~$${(mktV * appRate).toLocaleString()}/yr`,
+    `  Annual principal paydown: ~$${((val('s2-mortgage-bal') - o2.balance) / (holdMo/12)).toFixed(0)}/yr`,
+    `  But exit costs (${sellCostRate}%) apply to the ENTIRE property value, eating appreciation gains`,
+    `  Net annual gain: ~$${((o2.totalNetWorth - (o1.netCash || 0)) / (holdMo/12)).toFixed(0)} on $${(o1.netCash || 0).toLocaleString()} equity`,
+    `  Time-value adjusted → ~${fmtPct(o2.irr)}`,
     '',
     '=== OPTION 3: JV REDEVELOPMENT ===',
-    `Sell Timeline: ${loanMonths} months (${jvYear.toFixed(1)} years)`,
-    `Land Value (as-is): $${val('s3-as-is-value').toLocaleString()}`,
-    `Existing Mortgage: $${val('s3-mortgage').toLocaleString()}`,
-    `Building: ${val('s3-building-sqft')} sqft × $${val('s3-construction-psf')}/sqft = $${(val('s3-building-sqft') * val('s3-construction-psf')).toLocaleString()}`,
-    `GC Fee: $${val('s3-gc-fee').toLocaleString()} | Site Work: $${val('s3-sitework').toLocaleString()}`,
-    `Dev Costs (ex-financing): ${fmt(o3.devCostsExFinancing || (o3.totalSoftCost + o3.totalHardCost + o3.totalCarryCost))}`,
-    `Construction Loan: $${loanAmt.toLocaleString()} at ${loanRate}% for ${loanMonths} months`,
-    `  Loan Payoff at Sale: $${loanPayoff.toLocaleString()} (principal + interest + closing)`,
-    `Sale Price: $${val('s3-sale-psf')}/sqft × ${val('s3-building-sqft')} = $${(val('s3-sale-psf') * val('s3-building-sqft')).toLocaleString()}`,
-    `Selling Costs at Exit: ${val('s3-sell-close-pct')}%`,
-    `Net Sale Proceeds: ${fmt(o3.netSaleProceeds)}`,
     '',
-    '  WATERFALL:',
+    'INPUTS:',
+    `  Sell Timeline: ${loanMonths} months (${jvYear.toFixed(1)} years)`,
+    `  Land Value (as-is): $${val('s3-as-is-value').toLocaleString()}`,
+    `  Existing Mortgage: $${val('s3-mortgage').toLocaleString()}`,
+    `  Building: ${val('s3-building-sqft')} sqft × $${val('s3-construction-psf')}/sqft = $${(val('s3-building-sqft') * val('s3-construction-psf')).toLocaleString()}`,
+    `  GC Fee: $${val('s3-gc-fee').toLocaleString()} | Site Work: $${val('s3-sitework').toLocaleString()}`,
+    `  Dev Costs (ex-financing): ${fmt(o3.devCostsExFinancing || (o3.totalSoftCost + o3.totalHardCost + o3.totalCarryCost))}`,
+    `  Construction Loan: $${loanAmt.toLocaleString()} at ${loanRate}% for ${loanMonths} months`,
+    `    Loan Closing (1.75%): $${loanClosing.toLocaleString()}`,
+    `    Loan Interest (${loanMonths}mo): $${loanInterest.toLocaleString()}`,
+    `    Total Loan Payoff at Sale: $${loanPayoff.toLocaleString()} (principal + interest + closing)`,
+    `  Sale Price: $${val('s3-sale-psf')}/sqft × ${val('s3-building-sqft')} = $${(val('s3-sale-psf') * val('s3-building-sqft')).toLocaleString()}`,
+    `  Selling Costs at Exit: ${val('s3-sell-close-pct')}%`,
+    '',
+    'JV DEAL STRUCTURE:',
+    `  I contribute: land ($${val('s3-as-is-value').toLocaleString()}) + continue paying mortgage ($${mortPmt}/mo)`,
+    `  Jeff contributes: all development costs, paid via construction loan + his cash`,
+    `  JV Split: me ${val('s3-my-pct')}% / dev ${val('s3-dev-pct')}%`,
+    `  Preferred Return: ${val('s3-pref-return')}%`,
+    `  Tax Rate on my profit: ${val('s3-tax-rate')}%`,
+    '',
+    'WATERFALL:',
+    `  Net Sale Proceeds: ${fmt(o3.netSaleProceeds)} (sale ${fmt(o3.saleBase)} − ${val('s3-sell-close-pct')}% costs)`,
     `  1. Repay Loan (principal+interest+closing): -$${loanPayoff.toLocaleString()}`,
     `  2. Pay Off Remaining Mortgage: -${fmt(o3.remainingMortgageAtSale)}`,
     `  3. Return Capital: me ${fmt(o3.myContribution)} + Jeff ${fmt(o3.devContribution)}`,
     `  4. Preferred Return (${val('s3-pref-return')}%): pro-rata on capital`,
     `  5. Profit Split: me ${val('s3-my-pct')}% / dev ${val('s3-dev-pct')}%`,
     '',
-    `JV Structure: Equity | My ${val('s3-my-pct')}% / Dev ${val('s3-dev-pct')}%`,
-    `Tax Rate on Profit: ${val('s3-tax-rate')}%`,
-    `My equity: ${fmt(o3.myContribution)} (land $${val('s3-as-is-value').toLocaleString()} − mortgage $${val('s3-mortgage').toLocaleString()})`,
-    `Jeff\'s cash equity: ${fmt(o3.devContribution)} (construction costs beyond loan)`,
-    `My mortgage during construction: ${fmt(o3.totalMortgagePayments)} (${loanMonths} mo × $${val('s2-mortgage-pmt').toLocaleString()})`,
+    'MY RESULTS:',
+    `  My equity: ${fmt(o3.myContribution)} (land $${val('s3-as-is-value').toLocaleString()} − mortgage $${val('s3-mortgage').toLocaleString()})`,
+    `  Jeff's cash equity: ${fmt(o3.devContribution)} (dev costs − loan)`,
+    `  My mortgage during construction: ${fmt(o3.totalMortgagePayments)} (${loanMonths} mo × $${mortPmt})`,
+    `  My pre-tax waterfall payout: ${fmt(o3.myPayout)}`,
+    `  My tax: ${fmt(o3.myTax)}`,
+    `  My net after tax: ${fmt(o3.myNetAfterTax)}`,
+    `  Remaining mortgage paid from sale proceeds: ${fmt(o3.remainingMortgageAtSale)}`,
+    `  → My Net Cash at Sale: ${fmt(o3.myNetCashAtSale)}`,
     '',
-    `→ Total Project Cost: ${fmt(o3.totalProjectCost)}`,
-    `→ Gross Profit: ${fmt(o3.grossProfit)}`,
-    `→ My Waterfall Payout: ${fmt(o3.myPayout)}`,
-    `→ My Tax: ${fmt(o3.myTax)}`,
-    `→ My Net After Tax: ${fmt(o3.myNetAfterTax)}`,
-    `→ My Net Cash at Sale: ${fmt(o3.myNetCashAtSale)}`,
-    `→ IRR (monthly precision, annualized): ${fmtPct(o3.irr)}`,
-    `→ Jeff\'s Project Return: ${fmtPct(o3.jeffProjectReturn)}`,
+    'JV IRR CALCULATION (monthly precision):',
+    `  Initial Equity (Mo0 outflow) = Sell-Now Net Cash = ${fmt(o1.netCash)}`,
+    `  Monthly outflow during construction = mortgage payment = $${jvMortPmt.toLocaleString()}`,
+    `  Final month inflow = My Net Cash at Sale − mortgage payment = ${fmt(o3.myNetCashAtSale)} − ${fmt(jvMortPmt)} = ${fmt((o3.myNetCashAtSale || 0) - jvMortPmt)}`,
+    '',
+    `  CASH FLOW SERIES (${jvFlows.length} monthly entries):`,
+    ...jvFlowDetails,
+    '',
+    `  → Annual IRR: ${fmtPct(o3.irr)}`,
+    `  → Jeff's Project Return: ${fmtPct(o3.jeffProjectReturn)}`,
+    '',
+    'WHY SHORTER JV TIMELINES HAVE HIGHER IRR:',
+    `  Sale price is FIXED at $${val('s3-sale-psf')}/sqft regardless of timeline`,
+    `  But carrying costs scale with time:`,
+    `    Loan interest: ${loanRate}%/yr on $${loanAmt.toLocaleString()} = ~$${Math.round(loanAmt * loanRate / 100 / 12).toLocaleString()}/mo`,
+    `    My mortgage: $${mortPmt.toLocaleString()}/mo`,
+    `    Total carry: ~$${Math.round(loanAmt * loanRate / 100 / 12 + mortPmt).toLocaleString()}/mo`,
+    `    12mo total carry: ~$${Math.round((loanAmt * loanRate / 100 / 12 + mortPmt) * 12).toLocaleString()}`,
+    `    24mo total carry: ~$${Math.round((loanAmt * loanRate / 100 / 12 + mortPmt) * 24).toLocaleString()}`,
+    `  Each extra month costs ~$${Math.round(loanAmt * loanRate / 100 / 12 + mortPmt).toLocaleString()} in carry, reducing profit.`,
     '',
     '=== BENCHMARKS ===',
     `Sell Timeline: ${loanMonths} months (${jvYear.toFixed(1)} years) — applies to both Rental and JV`,
     `Risk-Free Rate (10yr bond): ${val('s2-risk-free')}%`,
     'S&P 500 Historical Average: 11%/year',
-    `Sell Now + Risk-Free (${jvYear.toFixed(1)}yr): ${fmt(sellNow * Math.pow(1 + rfRate, jvYear))}`,
-    `Sell Now + S&P (${jvYear.toFixed(1)}yr): ${fmt(sellNow * Math.pow(1.11, jvYear))}`,
+    `Sell Now + Risk-Free (${jvYear.toFixed(1)}yr): ${fmt(o1.netCash)} × (1 + ${val('s2-risk-free')}%)^${jvYear.toFixed(1)} = ${fmt(sellNow * Math.pow(1 + rfRate, jvYear))}`,
+    `Sell Now + S&P (${jvYear.toFixed(1)}yr): ${fmt(o1.netCash)} × (1 + 11%)^${jvYear.toFixed(1)} = ${fmt(sellNow * Math.pow(1.11, jvYear))}`,
   ];
 
   const fb = $('facts-block');
