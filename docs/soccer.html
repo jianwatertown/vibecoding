@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Slowcelona Sunday pickup soccer. Scan the QR code or open check-in to record your attendance.">
+  <meta name="theme-color" content="#183e2d">
+  <title>Slowcelona · Soccer check-in</title>
+  <style>
+    :root { color-scheme:light; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#183e2d; background:#f4f5ef; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; padding:28px 20px; }
+    main { max-width:440px; margin:0 auto; }
+    header { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:800; letter-spacing:2px; margin-bottom:30px; }
+    .badge { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:#183e2d; color:#d5f18a; font-size:20px; }
+    .eyebrow { font-size:12px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; color:#657464; }
+    h1 { font-size:44px; line-height:1.08; letter-spacing:-2px; margin:12px 0 14px; }
+    p { color:#626c62; line-height:1.6; }
+    .intro { margin:0 0 22px; }
+    .qr-card { margin:0; background:white; border:1px solid #dce1d5; border-radius:20px; padding:16px; }
+    .qr-card img { display:block; width:100%; height:auto; aspect-ratio:1; }
+    figcaption { text-align:center; color:#626c62; font-size:14px; line-height:1.6; margin:0 0 10px; }
+    .button { display:flex; align-items:center; justify-content:center; width:100%; min-height:58px; padding:14px 18px; border-radius:12px; text-decoration:none; font:inherit; font-size:17px; font-weight:750; cursor:pointer; }
+    .primary { margin-top:20px; border:0; background:#183e2d; color:#e9ffba; }
+    .secondary { margin-top:12px; border:1px solid #b6c2b1; background:transparent; color:#183e2d; font-size:14px; font-weight:600; }
+    .button:focus-visible { outline:3px solid #8fac46; outline-offset:3px; }
+    .hint { font-size:13px; text-align:center; margin:15px 0 0; }
+    footer { font-size:12px; text-align:center; color:#7a8479; margin-top:28px; }
+    @media (max-width:360px) { h1 { font-size:38px; } .qr-card { padding:10px; } }
+    @media print {
+      @page { margin:18mm; }
+      body { background:white; padding:0; }
+      main { max-width:140mm; }
+      header { margin-bottom:20px; }
+      .no-print { display:none; }
+      .qr-card { border:0; padding:0; }
+      .qr-card img { max-width:125mm; margin:0 auto; }
+      .qr-card,header,h1 { break-inside:avoid; }
+      footer { margin-top:16px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header><span class="badge" aria-hidden="true">⚽</span> SLOWCELONA</header>
+    <div class="eyebrow">Sunday pickup soccer</div>
+    <h1>Scan. Check in.<br>Let’s play.</h1>
+    <p class="intro">Open WeChat and scan the QR code.<br><span lang="zh">微信扫一扫，选择姓名后签到。</span></p>
+    <figure class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnwAAAJ8CAIAAADrj+sBAAAPDklEQVR4nO3cUY7jQJIFQWlR97+y5gQ7INA5joik2QFaFMmSI/vjfX+/3wcA+N/7v+AzAADRBYCOky4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6AJA5O8zzPf7/bzV7/f73OjJMy2/+7TrmXbNGz9r4zWXn+V3dQ4nXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwDeur38xLRd3CembZ9O27zdeH+e2HgPy7+vU59V3udpu8qn+F1tOOkCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEFm5vfxEueVbbpaWe63T9pA3bjg/YV/335167hv3q0u3/q6WnHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiFy7vfxm5T7ztF3ccp/51GdN25TeuD98607vtL9l/p2TLgBERBcAIqILABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR28tctcFbbh2Xm9Ibt3w3ftbGrWx2cdIFgIjoAkBEdAEgIroAEBFdAIiILgCILgDcxUkXACKiCwAR0QWAiOgCQOTa7eVy73ejjduw0/Z1nyg/a+Nzn7bvPe39mebW71Vy0gWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgsnJ7edp+7DTlfuypZzFtV3navu6t1+Pfae7PE35XG066ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAES+5V4r79zgnWbaVq3ndd899LvK/8dJFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYC3bi+f2jW1CTzHtF3cjfvMpTf/Jkx77tOu583v4SlOugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBEVm4vP1Fusdp0naPcqr31b2fjfd74vJ6Y9r02buP/hj13J10AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIiu3lzde8zTlPmq503vrdz9l49bxtM96s1s37UtOugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgC8dXv5lGl7rW/+rGk7xrduum68z09Mexa3vj+l74vvoZMuAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILAJFrt5dPKfeHpz2Lad/91JZvadpedHkPp204b3xe0z5rmu/C7+6kCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAsBbt5c3bpZO28Wdds1vfsdO2fhulG7dZz5l43P/DrueU5x0AUB0AeAuTroAEBFdAIiILgBERBcAIqILABHRBYCI6AJARHQBICK6ABD5+yw0bYd22s7qRuXOavncp7n1e03bGy+Vfxdv3kw+xUkXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgMj31g3Mcp95mmnfvdy8LZ9XeT0b7+G0a572d3HKxr+LJ6a9z6c46QJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQsb184Q7tExs3b0+59ZpLGzdvN77P035/TvkOu56Sky4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAkZXby9P2h0991jS3bsxufF7lVu3GjeJbn+kp07bWf8OeRclJFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYDI32eYabudGzeBN266btwELp/prTvhb97gfeLNe9rfYS04xUkXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgLduL5/a/yw3OcvrmfZZT2zcQ771fZ624TxtE3jjlm95D6f9jn2HteAJJ10AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIt9pu5SnTNt0Lb15q7Z8Xt6ff78/p0x7nzf+bpwy7TdhGiddAIiILgBERBcAIqILABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACLXbi9v3Gt987bwrTvGT3h/5tznab8JpzbkT9n4N/gb1jgnXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAgugBwFyddAIiILgBE/j7DnNoanbYROm1DdaNTz9378+/3Z5pT11xuJt/6+7Nx47rkpAsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6AJA5Ltxu/KJcoO3vIflZum0/dhbv5f3p7k/5XMvr3nj+1Oa1jgnXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiK7eXN+5/8s7N21vf1Vv3fjfuPG/0C/92pjXOSRcAIqILABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAyN9nmGl7m+X1vHljduOW77R93VPv2MZnMc20ZzHtszb+Zp7ipAsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6ALAW7eXp+1/nnJq+3Ta9ypN2w2etq/7xMYt3/JZlH+nG59F+fvzHfaOneKkCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAsBbt5fLvc1pG6qnTNt0PbXXOm3Ld5ryPr95J3zaPvOt7+pv4fd6wkkXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgLduL09T7hhvvJ5pO7Tl3u/G/dhpu9ynPuuJ8nqmvRvTruc37O+i5KQLABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQOT75g3MabvBG6+53MWd9t03bt7e+rye8FvX3B/P/b9z0gWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAHgrdvL03ZxSxt3aKdtC5c2fveNf1/T7uGt333a+/wddj2nOOkCQER0ASAiugAgugBwFyddAIiILgBERBcAIqILABHRBYCI6AJARHQBIPL3Wajc5Ny4NXpq93Xa9unG3eBpz/TUZz35d6Y9i1NOfffye735s37D9pmddAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6AJARHQBICK6ABARXQCIrNxenrZ5O+3fOWXjrvK0LdaNG+C33udpf4PT7vO0e/gbtpl8ipMuAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILAJHvtH3LjdvC0/ZIy23Yjc/9lGnPYuN7aG98zv2Z9nv4xMYNZyddAIiILgBERBcAIqILABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXAN66vTzNtP3YaXvI0777xi3Waff5lI3Pa+P1PLHxmp+Y9rf8hJMuAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILAJG/z0LTNmbLHdqNW6y3OrXTO+1ZlNezcVP6lGmb5NP8Fm53P+GkCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkDkO22XstzSnLZ9Wm6oTruHp5Tv87TvXvK70dzDje9Y+dvyG9avJ5x0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAHjr9jJzNpynbUFP2+Weds1PTLuHG027P9Pen1N+C/++nnDSBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0AeCt28u37rU+4Vk093DaO3brVvbGjetp78YT0+7Pxvew5KQLABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QUA0QWAu/x9Ftq4t3lqa/TU9ukT0zZUn3xWeX/Knd5p7/zGjeLStJ3n8v2Z9pvwG/a347+XASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIh8p+1SntrSnLZrOu17Tbvmcg954w5taeMzPWXab8utfsO6U3LSBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASDyV30Qs9y6H3vrhnP5vd68q1z+O9O+u+fecNIFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6AJARHQBIGJ7+ULTdlafmLb7uvEePjHtHj5x6lmUz30af19zOOkCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAELl2e3na5u2bv1e5nXvKtH3mjdu5p0x77qVb343vsHes5KQLABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQOQ7bd9y2vZp6dRm6TTl7usT03ZoT33WKbf+Jkx7FjaK37nP7KQLABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCwFu3lwHgVk66ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6AJARHQBICK6ABARXQCIiC4AREQXACKiCwAR0QWAiOgCQER0ASAiugAQEV0AiIguAEREFwAiogsAEdEFgIjoAkBEdAEgIroAEBFdAIiILgBERBcAIqILABHRBYCI6ALAp/Efbpza90Mg4RkAAAAASUVORK5CYII=" width="636" height="636" alt="QR code linking to the Slowcelona attendance check-in page">
+      <figcaption>Choose your name and tap CHECK IN.<br><span lang="zh">没有你的名字？可以直接添加。</span></figcaption>
+    </figure>
+    <a class="button primary no-print" href="https://script.google.com/macros/s/AKfycbz07B0tN_xSRDcluVnu26bKNGLVgMy6VTmxO9qLRGBFxXuwJCuOSr_-itVCWYg6k2R9/exec">Open check-in / <span lang="zh">签到</span></a>
+    <p class="hint no-print">Already on your phone? Tap the button above.</p>
+    <button class="button secondary no-print" id="print" type="button" hidden>Print QR poster</button>
+    <footer>One check-in. Then back to the game.</footer>
+  </main>
+  <script>
+    var printButton = document.getElementById('print');
+    printButton.hidden = false;
+    printButton.addEventListener('click', function () { window.print(); });
+  </script>
+</body>
+</html>
