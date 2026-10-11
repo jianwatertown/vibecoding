@@ -1,0 +1,4 @@
+import waiver from '@/content/waiver.json';
+import Link from 'next/link';
+export const metadata={title:'Participation waiver · Slowcelona'};
+export default function Waiver(){return <main id="main" className="legal card"><span className="eyebrow">SLOWCELONA · ADULT PARTICIPATION WAIVER</span><h1>{waiver.title}</h1><p className="muted small">Version: {waiver.version}</p>{waiver.blocks.map((b,i)=><p key={i}>{b.text}</p>)}<hr/><p>For participants 18 or older. You enter your full name and explicitly agree when reserving. The accepted version and time are saved with your reservation.</p><div className="notice"><strong>Players under 18</strong><p>Ask the organizer for the parent or guardian consent form before reserving or playing. The adult agreement is not a youth consent form.</p></div><Link className="primary" href="/">BACK TO RESERVATIONS <span>↗</span></Link></main>}

@@ -1,0 +1,18 @@
+{
+  "name": "slowcelona",
+  "version": "2.0.0",
+  "private": true,
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "sheets:inspect": "tsx --env-file=.env.local scripts/sheets.ts inspect",
+    "sheets:setup": "tsx --env-file=.env.local scripts/sheets.ts setup",
+    "sheets:verify": "tsx --env-file=.env.local scripts/sheets.ts verify"
+  },
+  "dependencies": { "next": "16.4.0", "react": "19.3.0", "react-dom": "19.3.0", "qrcode": "1.5.4" },
+  "devDependencies": { "typescript": "^5.9.3", "tsx": "^4.21.0", "@types/node": "^24", "@types/react": "^19", "@types/react-dom": "^19", "@types/qrcode": "^1.5.6" }
+}

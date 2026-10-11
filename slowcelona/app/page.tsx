@@ -1,0 +1,2 @@
+import ReservationPage from '@/components/ReservationPage';
+export default function Home(){return <main id="main" className="home"><section className="hero"><div className="hero-copy"><span className="eyebrow">SUNDAY SOCCER</span><h1>Reserve your<br/>spot<span>.</span></h1><a className="text-link" href="/club">Club information <span>↗</span></a></div><div className="hero-art"><img src="/soccer.webp" alt="Illustration of friends in red and blue playing soccer"/></div></section><ReservationPage/></main>}

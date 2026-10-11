@@ -1,0 +1,9 @@
+.private
+.env*
+qa
+tests
+scripts
+README.md
+content/waivers
+
+*.tsbuildinfo

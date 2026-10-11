@@ -1,0 +1,18 @@
+import {google,metadata,sheetId,stringRow} from '../lib/google';
+async function main(){const meta=await metadata();if(meta.sheets.some(s=>s.properties.title==='Season Summary')){console.log('Season Summary exists; left unchanged.');return;}
+ const id=10271004;
+ const headers=['player_id','name','committed_games','credit_balance','organizer_notes'];
+ const cells=(values:string[])=>({values:values.map(v=>({userEnteredValue:v.startsWith('=')?{formulaValue:v}:{stringValue:v}}))});
+ const rows=[stringRow(['SLOWCELONA · PERIOD SUMMARY']),stringRow(['Choose the start and end dates below. Counts include reservations, even for no-shows.']),stringRow(['Start date','2026-01-01']),stringRow(['End date','2026-12-31']),stringRow(['Pricing is settled separately. Credit balance mirrors Players; existing Players charges cover historical Attendance only.']),stringRow(['To waive a reservation: set its status to waived and add an admin note. Never delete its row or waiver record.']),stringRow(['Counts deduplicate the same player and game across historical Attendance and new Reservations.']),stringRow(headers)];
+ const helper='=IFERROR(UNIQUE(FILTER({Attendance!A2:B;Reservations!B2:C},{Attendance!A2:A;Reservations!B2:B}<>"",{IF(Attendance!A2:A<>"","reserved","");Reservations!F2:F}="reserved")),{"",""})';
+ await google(`/${sheetId()}:batchUpdate`,'POST',{requests:[{addSheet:{properties:{sheetId:id,title:'Season Summary',gridProperties:{rowCount:10000,columnCount:13,frozenRowCount:8}}}},{updateCells:{start:{sheetId:id,rowIndex:0,columnIndex:0},rows,fields:'userEnteredValue'}},{updateCells:{start:{sheetId:id,rowIndex:7,columnIndex:9},rows:[stringRow(['game_id','player_id','game_date']),cells([helper]),],fields:'userEnteredValue'}},
+ {updateCells:{start:{sheetId:id,rowIndex:8,columnIndex:11},rows:[cells(['=ARRAYFORMULA(IF(J9:J="","",IFERROR(VLOOKUP(J9:J,Games!A:B,2,FALSE),"")))'])],fields:'userEnteredValue'}},
+ {updateCells:{start:{sheetId:id,rowIndex:8,columnIndex:0},rows:[cells(['=IFERROR(FILTER(Players!A2:B,Players!A2:A<>""),"")'])],fields:'userEnteredValue'}},
+ ...Array.from({length:1000},(_,i)=>({updateCells:{start:{sheetId:id,rowIndex:i+8,columnIndex:2},rows:[cells([`=IF(A${i+9}="","",IFERROR(ROWS(FILTER($J$9:$J,$K$9:$K=A${i+9},IFERROR(DATEVALUE($L$9:$L),$L$9:$L)>=IFERROR(DATEVALUE($B$3),$B$3),IFERROR(DATEVALUE($L$9:$L),$L$9:$L)<=IFERROR(DATEVALUE($B$4),$B$4))),0))`,`=IF(A${i+9}="","",IFERROR(VLOOKUP(A${i+9},Players!A:D,4,FALSE),""))`])],fields:'userEnteredValue'}})),
+ {repeatCell:{range:{sheetId:id,startRowIndex:7,endRowIndex:8},cell:{userEnteredFormat:{backgroundColor:{red:.08,green:.22,blue:.16},textFormat:{bold:true,foregroundColor:{red:1,green:1,blue:1}},wrapStrategy:'WRAP'}},fields:'userEnteredFormat'}},
+ {repeatCell:{range:{sheetId:id,startRowIndex:0,endRowIndex:7,startColumnIndex:0,endColumnIndex:1},cell:{userEnteredFormat:{textFormat:{fontSize:12}}},fields:'userEnteredFormat'}},
+ {repeatCell:{range:{sheetId:id,startRowIndex:2,endRowIndex:4,startColumnIndex:1,endColumnIndex:2},cell:{userEnteredFormat:{backgroundColor:{red:.9,green:.96,blue:.8},textFormat:{bold:true},numberFormat:{type:'TEXT'}}},fields:'userEnteredFormat'}},
+ {updateDimensionProperties:{range:{sheetId:id,dimension:'COLUMNS',startIndex:0,endIndex:5},properties:{pixelSize:190},fields:'pixelSize'}},
+ {updateDimensionProperties:{range:{sheetId:id,dimension:'COLUMNS',startIndex:9,endIndex:13},properties:{hiddenByUser:true},fields:'hiddenByUser'}},
+ {updateDimensionProperties:{range:{sheetId:id,dimension:'ROWS',startIndex:0,endIndex:8},properties:{pixelSize:36},fields:'pixelSize'}}]});console.log('Season Summary created with editable period and deduplicated game counts.');}
+main().catch(e=>{console.error(e.message);process.exitCode=1});

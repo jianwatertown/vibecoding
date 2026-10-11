@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.vercel/
+.private/
+.env*
+!.env.example
+*.tsbuildinfo
+qa/
+.DS_Store
+.vercel

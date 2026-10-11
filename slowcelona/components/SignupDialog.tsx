@@ -1,0 +1,8 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+export default function SignupDialog({initialName,onRegister,onClose}:{initialName:string;onRegister:(name:string)=>Promise<void>;onClose:()=>void}){
+ const dialog=useRef<HTMLDialogElement>(null),[name,setName]=useState(initialName),[saving,setSaving]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{const el=dialog.current;el?.showModal();return()=>el?.close()},[]);
+ async function submit(e:React.FormEvent){e.preventDefault();if(saving)return;setSaving(true);setError('');try{await onRegister(name);onClose()}catch(e){setError(e instanceof Error?e.message:'Couldn’t sign up. Please try again.');setSaving(false)}}
+ return <dialog ref={dialog} className="signup-dialog" aria-labelledby="signup-title" aria-describedby="signup-description" onCancel={e=>{e.preventDefault();if(!saving)onClose()}}><form onSubmit={submit}><h2 id="signup-title">Sign up</h2><p id="signup-description">Add your name to the player list, then complete the waiver to reserve.</p><label htmlFor="signup-name">Your name</label><input id="signup-name" autoFocus autoComplete="name" required minLength={2} maxLength={80} value={name} disabled={saving} onChange={e=>setName(e.target.value)}/><p className="small muted">Your name will be visible in the player list. If you’re already listed, we’ll use that entry.</p>{error&&<p className="notice error" role="alert">{error}</p>}<div className="button-row"><button type="button" className="secondary" disabled={saving} onClick={onClose}>Cancel</button><button className="primary" disabled={saving||name.trim().length<2}>{saving?'Saving…':'Sign up & continue'}</button></div></form></dialog>
+}
