@@ -2,16 +2,18 @@ import {google,metadata,values,stringRow,sheetId,type Grid} from './google';
 import {AppError,SheetsError} from './errors';
 import {playersFrom,upcomingGame,reservationsFrom,publicRoster,WAIVER,CONSENT,type ReserveInput,type Reservation} from './model';
 import {reserveOnce} from './reservations';
+import {syncCalendar,confirmedCalendarRows} from './calendar';
 export const SCHEMA={Reservations:['reservation_id','game_id','player_id','player_name','reserved_at','status','admin_notes'],WaiverAcceptances:['acceptance_id','reservation_id','game_id','player_id','participant_name','accepted_at','waiver_version','waiver_sha256','consent_text','signer_is_adult'],WaiverVersions:['waiver_version','sha256','text','created_at']};
 function assertHeaders(grid:Grid,expected:string[]){if(expected.some((h,i)=>grid[0]?.[i]!==h))throw new AppError('SHEET_CONFIG','Reservations need an organizer update. Please try again later.');}
 let cached:{at:number;data:Awaited<ReturnType<typeof readState>>}|undefined;
 let inFlight:Promise<Awaited<ReturnType<typeof readState>>>|undefined;
 async function readState(){
+  await syncCalendar();
   const [players,games,reservations,acceptances]=await values(['Players!A:E','Games!A:Z','Reservations!A:G','WaiverAcceptances!A1:J1']);
   assertHeaders(acceptances,SCHEMA.WaiverAcceptances);
   assertHeaders(players,['player_id','name','payment_type','credit_balance','active']);
   assertHeaders(games,['game_id','date']);assertHeaders(reservations,SCHEMA.Reservations);
-  return {players:playersFrom(players),game:upcomingGame(games),reservations:reservationsFrom(reservations)};
+  return {players:playersFrom(players),game:upcomingGame(confirmedCalendarRows(games)),reservations:reservationsFrom(reservations)};
 }
 export async function state(fresh=false){
   if(!fresh&&cached&&Date.now()-cached.at<10000)return cached.data;

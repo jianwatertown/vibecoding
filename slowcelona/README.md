@@ -46,7 +46,7 @@ Sources: [Sheets batch atomicity](https://developers.google.com/workspace/sheets
 
 ## Verification
 
-17 automated checks cover LA midnight/DST, game rollover, inactive flags, cancellation, privacy projection, explicit adult consent, exact waiver hash, 20 concurrent attempts, a lost write response, numeric metadata collisions, admin tombstones, and invalid HTTP requests. A separate synthetic Google Sheet was used to verify real API concurrency and batch atomicity, with exactly one reservation/acceptance after concurrent writes. HTTP tests verify invalid player/game, missing consent, under-18 rejection, successful reservation, and duplicate retries. Production has no synthetic player or reservation rows.
+21 automated checks cover LA midnight/DST, game rollover, inactive flags, cancellation, privacy projection, explicit adult consent, exact waiver hash, 20 concurrent attempts, a lost write response, numeric metadata collisions, admin tombstones, and invalid HTTP requests. A separate synthetic Google Sheet was used to verify real API concurrency and batch atomicity, with exactly one reservation/acceptance after concurrent writes. HTTP tests verify invalid player/game, missing consent, under-18 rejection, successful reservation, and duplicate retries. Production has no synthetic player or reservation rows.
 
 Before a wording update, replace `content/waiver.json` with a new version/hash, run tests, append its archived text with `scripts/sheets.ts setup`, then redeploy. Client requests send the hash of the text actually bundled into their page, so an older page cannot silently accept newer wording.
 
@@ -64,7 +64,7 @@ Usual warm reservation traffic uses one batch read and one atomic write. Sheet I
 
 ## Game details
 
-Games columns M (`time`) and N (`location`) supply the public game details. October 11 and 18, 2026 were imported from the organizer’s Slowcelona calendar events: 8–10 PM Pacific, Robinswood Soccer 1 East. This is a one-time import, not a live calendar sync. Unfilled games show “Time and location to be confirmed.” Update these fields in the Sheet when the schedule changes. The game card labels the current Los Angeles date “TODAY.”
+Games columns M (`time`) and N (`location`) supply the public game details. October 11 and 18, 2026 were imported from the organizer’s Slowcelona calendar events: 8–10 PM Pacific, Robinswood Soccer 1 East. When `GOOGLE_CALENDAR_ID` is configured, the server refreshes confirmed Slowcelona calendar events on demand, at most once every five minutes per server instance. Without that setting, these fields remain manually managed. The game card labels the current Los Angeles date “TODAY.”
 
 The game card shows arrival 30 minutes before the game time (for example, arrive 7:30 PM for an 8–10 PM game). Keep the actual kickoff time in `Games.time`; do not subtract the lead time in the Sheet. Use a 12-hour range such as `8–10 PM Pacific` or `11 AM–1 PM Pacific`.
 
@@ -78,8 +78,14 @@ Signup atomically claims both the normalized-name ID and an unused Players row u
 
 - Vercel (`watertown/slowcelona`) runs the website and server API continuously; the organizer’s computer can be off.
 - Google Sheets stores the roster, game schedule, reservations, consent records and summaries. The Vercel server accesses only the shared spreadsheet through a Google service account. Google Cloud holds that service account and API configuration.
-- Google Calendar provided a one-time import of October 11 and 18 event details. There is no automatic Calendar sync or weekly background job.
+- Google Calendar sync is available behind `GOOGLE_CALENDAR_ID`. Enable Google Calendar API in the service-account project and share the selected calendar read-only with the service account before setting this variable.
 - Squarespace holds the domain registration and DNS records pointing `slowcelona.com` to Vercel. The old Squarespace site is not the reservation backend.
 - GitHub (`jianwatertown/vibecoding/slowcelona`) stores this source backup. The existing GitHub Pages QR entry remains in `docs/soccer.html`. Deployments currently use the Vercel CLI; pushing this folder alone does not automatically deploy it.
 
-On every data refresh, the app chooses the earliest non-cancelled game dated today or later in Los Angeles time. Sunday’s game remains selected through Sunday night; after midnight Monday it advances to the next listed game. The Chinese announcement follows that selected game. Keep Games dates, time and location up to date; the page does not create new games or infer unavailable calendar information.
+On every data refresh, the app chooses the earliest non-cancelled game dated today or later in Los Angeles time. Sunday’s game remains selected through Sunday night; after midnight Monday it advances to the next listed game. The Chinese announcement follows that selected game. With calendar sync enabled, only calendar-confirmed games are offered. New game dates are created automatically; moved events retain their game ID and reservations, and removed upcoming events are marked cancelled. No weekly background job is required: visiting the site triggers a refresh. Calendar errors stop live reservations until a refresh succeeds rather than showing an unverified schedule.
+
+### Calendar sync configuration
+
+The service account requires Calendar API enabled and “See all event details” access to the chosen calendar. Set `GOOGLE_CALENDAR_ID` only after verifying that access. The server requests the calendar.events.readonly OAuth scope and only reads event IDs, titles, status, start/end and location. Only titles containing the word Slowcelona are published. The next 180 days are read, including recurring instances; ambiguous same-day or untimed events require organizer review.
+
+Games columns O–Q must be `cancelled`, `calendar_event_id`, `calendar_synced_at`. Preserve those tracking fields and existing game IDs. The sync writes dates and calendar details but does not change prices, player balances or reservation rows. Arrival remains 30 minutes before kickoff. Without `GOOGLE_CALENDAR_ID`, the previous Sheet-only behavior remains available.
